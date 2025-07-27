@@ -13,9 +13,11 @@ import { BYTE_RANGE_PLACEHOLDER } from '../constants/byte-range';
 
 export type AddSigningPlaceholderOptions = {
   pdf: Buffer;
+  signers?: string[];
+  documentId?: number;
 };
 
-export const addSigningPlaceholder = async ({ pdf }: AddSigningPlaceholderOptions) => {
+export const addSigningPlaceholder = async ({ pdf, signers = [], documentId }: AddSigningPlaceholderOptions) => {
   const doc = await PDFDocument.load(pdf);
   const [firstPage] = doc.getPages();
 
@@ -26,6 +28,19 @@ export const addSigningPlaceholder = async ({ pdf }: AddSigningPlaceholderOption
   byteRange.push(PDFName.of(BYTE_RANGE_PLACEHOLDER));
   byteRange.push(PDFName.of(BYTE_RANGE_PLACEHOLDER));
 
+  // Create reason text with all signers
+  let reasonText = 'Signed by Documenso';
+  
+  if (signers && signers.length > 0) {
+    // If signers array has one item and it contains newlines, it's already formatted with timestamps
+    if (signers.length === 1 && signers[0].indexOf('\n') !== -1) {
+      reasonText = signers[0];
+    } else {
+      // Otherwise, join the signers as before
+      reasonText = `Signed by ${signers.join(', ')}`;
+    }
+  }
+
   const signature = doc.context.register(
     doc.context.obj({
       Type: 'Sig',
@@ -33,7 +48,7 @@ export const addSigningPlaceholder = async ({ pdf }: AddSigningPlaceholderOption
       SubFilter: 'adbe.pkcs7.detached',
       ByteRange: byteRange,
       Contents: PDFHexString.fromText(' '.repeat(8192)),
-      Reason: PDFString.of('Signed by Documenso'),
+      Reason: PDFString.of(reasonText),
       M: PDFString.fromDate(new Date()),
     }),
   );

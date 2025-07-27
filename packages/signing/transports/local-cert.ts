@@ -8,11 +8,13 @@ import { updateSigningPlaceholder } from '../helpers/update-signing-placeholder'
 
 export type SignWithLocalCertOptions = {
   pdf: Buffer;
+  signers?: string[];
+  documentId?: number;
 };
 
-export const signWithLocalCert = async ({ pdf }: SignWithLocalCertOptions) => {
+export const signWithLocalCert = async ({ pdf, signers, documentId }: SignWithLocalCertOptions) => {
   const { pdf: pdfWithPlaceholder, byteRange } = updateSigningPlaceholder({
-    pdf: await addSigningPlaceholder({ pdf }),
+    pdf: await addSigningPlaceholder({ pdf, signers, documentId }),
   });
 
   const pdfWithoutSignature = Buffer.concat([

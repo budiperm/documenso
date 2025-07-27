@@ -8,9 +8,11 @@ import { updateSigningPlaceholder } from '../helpers/update-signing-placeholder'
 
 export type SignWithGoogleCloudHSMOptions = {
   pdf: Buffer;
+  signers?: string[];
+  documentId?: number;
 };
 
-export const signWithGoogleCloudHSM = async ({ pdf }: SignWithGoogleCloudHSMOptions) => {
+export const signWithGoogleCloudHSM = async ({ pdf, signers, documentId }: SignWithGoogleCloudHSMOptions) => {
   const keyPath = env('NEXT_PRIVATE_SIGNING_GCLOUD_HSM_KEY_PATH');
 
   if (!keyPath) {
@@ -33,7 +35,7 @@ export const signWithGoogleCloudHSM = async ({ pdf }: SignWithGoogleCloudHSMOpti
   }
 
   const { pdf: pdfWithPlaceholder, byteRange } = updateSigningPlaceholder({
-    pdf: await addSigningPlaceholder({ pdf }),
+    pdf: await addSigningPlaceholder({ pdf, signers, documentId }),
   });
 
   const pdfWithoutSignature = Buffer.concat([
