@@ -186,7 +186,12 @@ export const run = async ({
     // create native arcoFields
     await flattenForm(pdfDoc);
 
-    const pdfBytes = await pdfDoc.save();
+    const pdfBytes = await pdfDoc.save({
+      useObjectStreams: false,
+      addDefaultPage: false,
+      objectsPerTick: 50,
+      updateFieldAppearances: false,
+    });
     const pdfBuffer = await signPdf({ 
       pdf: Buffer.from(pdfBytes), 
       documentId: document.id 

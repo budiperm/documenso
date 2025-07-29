@@ -47,7 +47,7 @@ export const addSigningPlaceholder = async ({ pdf, signers = [], documentId }: A
       Filter: 'Adobe.PPKLite',
       SubFilter: 'adbe.pkcs7.detached',
       ByteRange: byteRange,
-      Contents: PDFHexString.fromText(' '.repeat(8192)),
+      Contents: PDFHexString.fromText(' '.repeat(4096)),
       Reason: PDFString.of(reasonText),
       M: PDFString.fromDate(new Date()),
     }),
