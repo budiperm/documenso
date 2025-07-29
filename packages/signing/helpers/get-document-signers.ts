@@ -71,7 +71,7 @@ export const getDocumentSigners = async ({ documentId }: GetDocumentSignersOptio
 
 /**
  * Formats signer information into a multi-line string for PDF signature reason.
- * Each signer gets their own line with name and timestamp.
+ * Each signer gets their own line with name and timestamp in GMT+7.
  * 
  * @param signers - Array of signer information
  * @returns Formatted string for PDF signature reason
@@ -82,17 +82,52 @@ export const formatSignersForPdf = (signers: SignerInfo[]): string => {
   }
 
   const signerLines = signers.map((signer, index) => {
+    // Convert to GMT+7 (Asia/Jakarta timezone)
     const formattedDate = signer.signedAt.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
       timeZoneName: 'short',
     });
     
     return `${index + 1}. ${signer.name} - ${formattedDate}`;
   });
 
-  return `Signed by:\n${signerLines.join('\n')}`;
+  // For single signer, return just the formatted line
+  if (signers.length === 1) {
+    return signerLines[0];
+  }
+
+  // For multiple signers, try line breaks first, fallback to pipe separation
+  return signerLines.join('\r\n');
+};
+
+/**
+ * Alternative format using clear visual separators when line breaks don't work
+ */
+export const formatSignersForPdfFallback = (signers: SignerInfo[]): string => {
+  if (signers.length === 0) {
+    return 'Signed by Documenso';
+  }
+
+  const signerLines = signers.map((signer, index) => {
+    // Convert to GMT+7 (Asia/Jakarta timezone)
+    const formattedDate = signer.signedAt.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Jakarta',
+      timeZoneName: 'short',
+    });
+    
+    return `${index + 1}. ${signer.name} - ${formattedDate}`;
+  });
+
+  // Use clear separators: double pipe with spaces
+  return `Signed by: ${signerLines.join(' || ')}`;
 };

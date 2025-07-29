@@ -32,12 +32,16 @@ export const addSigningPlaceholder = async ({ pdf, signers = [], documentId }: A
   let reasonText = 'Signed by Documenso';
   
   if (signers && signers.length > 0) {
-    // If signers array has one item and it contains newlines, it's already formatted with timestamps
-    if (signers.length === 1 && signers[0].indexOf('\n') !== -1) {
+    // If signers array has one item and it contains line breaks, it's already formatted with timestamps
+    if (signers.length === 1 && (signers[0].indexOf('\n') !== -1 || signers[0].indexOf('\r\n') !== -1)) {
+      reasonText = signers[0];
+    } else if (signers.length === 1 && signers[0].indexOf('.') !== -1) {
+      // If it's a single formatted string (like "1. John Doe - 07/29/2025")
       reasonText = signers[0];
     } else {
-      // Otherwise, join the signers as before
-      reasonText = `Signed by ${signers.join(', ')}`;
+      // Otherwise, join the signers with clearer separation using pipes
+      reasonText = `Signed by: ${signers.join(' | ')}`;
+    }
     }
   }
 
