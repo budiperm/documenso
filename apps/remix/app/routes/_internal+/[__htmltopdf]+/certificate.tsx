@@ -35,6 +35,11 @@ import { BrandingLogo } from '~/components/general/branding-logo';
 
 import type { Route } from './+types/certificate';
 
+// Get timezone from environment variable with fallback
+const DEFAULT_TIMEZONE = typeof window !== 'undefined' 
+  ? 'Asia/Jakarta' // Client-side fallback
+  : process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE || 'Asia/Jakarta';
+
 const FRIENDLY_SIGNING_REASONS = {
   ['__OWNER__']: msg`I am the owner of this document`,
   ...RECIPIENT_ROLE_SIGNING_REASONS,
@@ -291,6 +296,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                           <span className="inline-block">
                             {logs.EMAIL_SENT[0]
                               ? DateTime.fromJSDate(logs.EMAIL_SENT[0].createdAt)
+                                  .setZone(DEFAULT_TIMEZONE)
                                   .setLocale(APP_I18N_OPTIONS.defaultLocale)
                                   .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
                               : _(msg`Unknown`)}
@@ -302,6 +308,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                           <span className="inline-block">
                             {logs.DOCUMENT_OPENED[0]
                               ? DateTime.fromJSDate(logs.DOCUMENT_OPENED[0].createdAt)
+                                  .setZone(DEFAULT_TIMEZONE)
                                   .setLocale(APP_I18N_OPTIONS.defaultLocale)
                                   .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
                               : _(msg`Unknown`)}
@@ -314,6 +321,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                             <span className="inline-block">
                               {logs.DOCUMENT_RECIPIENT_REJECTED[0]
                                 ? DateTime.fromJSDate(logs.DOCUMENT_RECIPIENT_REJECTED[0].createdAt)
+                                    .setZone(DEFAULT_TIMEZONE)
                                     .setLocale(APP_I18N_OPTIONS.defaultLocale)
                                     .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
                                 : _(msg`Unknown`)}
@@ -327,6 +335,7 @@ export default function SigningCertificate({ loaderData }: Route.ComponentProps)
                                 ? DateTime.fromJSDate(
                                     logs.DOCUMENT_RECIPIENT_COMPLETED[0].createdAt,
                                   )
+                                    .setZone(DEFAULT_TIMEZONE)
                                     .setLocale(APP_I18N_OPTIONS.defaultLocale)
                                     .toFormat('yyyy-MM-dd hh:mm:ss a (ZZZZ)')
                                 : _(msg`Unknown`)}

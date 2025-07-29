@@ -81,15 +81,18 @@ export const formatSignersForPdf = (signers: SignerInfo[]): string => {
     return 'Signed by Documenso';
   }
 
+  // Get timezone from environment variable with fallback
+  const defaultTimezone = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE || 'Asia/Jakarta';
+
   const signerLines = signers.map((signer, index) => {
-    // Convert to GMT+7 (Asia/Jakarta timezone)
+    // Convert to configured timezone
     const formattedDate = signer.signedAt.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Jakarta',
+      timeZone: defaultTimezone,
       timeZoneName: 'short',
     });
     
@@ -108,15 +111,18 @@ export const formatSignersForPdfFallback = (signers: SignerInfo[]): string => {
     return 'Signed by Documenso';
   }
 
+  // Get timezone from environment variable with fallback
+  const defaultTimezone = process.env.NEXT_PUBLIC_DEFAULT_TIMEZONE || 'Asia/Jakarta';
+
   const signerLines = signers.map((signer, index) => {
-    // Convert to GMT+7 (Asia/Jakarta timezone)
+    // Convert to configured timezone
     const formattedDate = signer.signedAt.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Jakarta',
+      timeZone: defaultTimezone,
       timeZoneName: 'short',
     });
     
