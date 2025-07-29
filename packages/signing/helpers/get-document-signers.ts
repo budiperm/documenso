@@ -70,8 +70,8 @@ export const getDocumentSigners = async ({ documentId }: GetDocumentSignersOptio
 };
 
 /**
- * Formats signer information into a multi-line string for PDF signature reason.
- * Each signer gets their own line with name and timestamp in GMT+7.
+ * Formats signer information with clear visual separators for PDF signature reason.
+ * Uses pipe separators since line breaks don't work reliably in PDF signature reason field.
  * 
  * @param signers - Array of signer information
  * @returns Formatted string for PDF signature reason
@@ -96,13 +96,8 @@ export const formatSignersForPdf = (signers: SignerInfo[]): string => {
     return `${index + 1}. ${signer.name} - ${formattedDate}`;
   });
 
-  // For single signer, return just the formatted line
-  if (signers.length === 1) {
-    return signerLines[0];
-  }
-
-  // For multiple signers, try line breaks first, fallback to pipe separation
-  return signerLines.join('\r\n');
+  // Use double pipe separators for clear visual distinction
+  return signerLines.join(' || ');
 };
 
 /**
