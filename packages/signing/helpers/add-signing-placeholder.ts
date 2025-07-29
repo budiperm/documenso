@@ -42,7 +42,6 @@ export const addSigningPlaceholder = async ({ pdf, signers = [], documentId }: A
       // Otherwise, join the signers with clearer separation using pipes
       reasonText = `Signed by: ${signers.join(' | ')}`;
     }
-    }
   }
 
   const signature = doc.context.register(
