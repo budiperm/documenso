@@ -71,6 +71,7 @@ export type SignInFormProps = {
   initialEmail?: string;
   isGoogleSSOEnabled?: boolean;
   isOIDCSSOEnabled?: boolean;
+  isOIDCAutoRedirectEnabled?: boolean;
   oidcProviderLabel?: string;
   returnTo?: string;
 };
@@ -80,6 +81,7 @@ export const SignInForm = ({
   initialEmail,
   isGoogleSSOEnabled,
   isOIDCSSOEnabled,
+  isOIDCAutoRedirectEnabled,
   oidcProviderLabel,
   returnTo,
 }: SignInFormProps) => {
@@ -298,6 +300,23 @@ export const SignInForm = ({
       form.setValue('email', email);
     }
   }, [form]);
+
+  // Auto-redirect to OIDC if enabled
+  useEffect(() => {
+    if (isOIDCAutoRedirectEnabled) {
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Check if user is being redirected back from OIDC due to error or cancellation
+      // or if they explicitly want to see the signin form
+      const hasError = urlParams.has('error') || urlParams.has('error_description');
+      const showForm = urlParams.has('show_form') || urlParams.get('force_form') === 'true';
+      
+      // Only auto-redirect if not returning from OIDC with an error and not explicitly showing form
+      if (!hasError && !showForm) {
+        onSignInWithOIDCClick();
+      }
+    }
+  }, [isOIDCAutoRedirectEnabled, onSignInWithOIDCClick]);
 
   return (
     <Form {...form}>

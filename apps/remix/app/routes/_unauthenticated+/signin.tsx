@@ -5,6 +5,7 @@ import { getOptionalSession } from '@documenso/auth/server/lib/utils/get-session
 import {
   IS_GOOGLE_SSO_ENABLED,
   IS_OIDC_SSO_ENABLED,
+  IS_OIDC_AUTO_REDIRECT_ENABLED,
   OIDC_PROVIDER_LABEL,
 } from '@documenso/lib/constants/auth';
 import { env } from '@documenso/lib/utils/env';
@@ -24,6 +25,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   // SSR env variables.
   const isGoogleSSOEnabled = IS_GOOGLE_SSO_ENABLED;
   const isOIDCSSOEnabled = IS_OIDC_SSO_ENABLED;
+  const isOIDCAutoRedirectEnabled = IS_OIDC_AUTO_REDIRECT_ENABLED;
   const oidcProviderLabel = OIDC_PROVIDER_LABEL;
 
   if (isAuthenticated) {
@@ -33,12 +35,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     isGoogleSSOEnabled,
     isOIDCSSOEnabled,
+    isOIDCAutoRedirectEnabled,
     oidcProviderLabel,
   };
 }
 
 export default function SignIn({ loaderData }: Route.ComponentProps) {
-  const { isGoogleSSOEnabled, isOIDCSSOEnabled, oidcProviderLabel } = loaderData;
+  const { isGoogleSSOEnabled, isOIDCSSOEnabled, isOIDCAutoRedirectEnabled, oidcProviderLabel } = loaderData;
 
   return (
     <div className="w-screen max-w-lg px-4">
@@ -55,6 +58,7 @@ export default function SignIn({ loaderData }: Route.ComponentProps) {
         <SignInForm
           isGoogleSSOEnabled={isGoogleSSOEnabled}
           isOIDCSSOEnabled={isOIDCSSOEnabled}
+          isOIDCAutoRedirectEnabled={isOIDCAutoRedirectEnabled}
           oidcProviderLabel={oidcProviderLabel}
         />
 
