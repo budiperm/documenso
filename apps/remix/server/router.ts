@@ -13,6 +13,10 @@ import { getIpAddress } from '@documenso/lib/universal/get-ip-address';
 import { logger } from '@documenso/lib/utils/logger';
 import { openApiDocument } from '@documenso/trpc/server/open-api';
 
+// Initialize data retention scheduler (will auto-start in production if enabled)
+// Initialize data retention system
+import './data-retention-init';
+
 import { filesRoute } from './api/files';
 import { type AppContext, appContext } from './context';
 import { appMiddleware } from './middleware';

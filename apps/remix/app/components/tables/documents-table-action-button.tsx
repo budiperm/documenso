@@ -132,7 +132,7 @@ export const DocumentsTableActionButton = ({ row }: DocumentsTableActionButtonPr
       </Button>
     ))
     .with({ isComplete: true }, () => (
-      <Button className="w-32" onClick={onDownloadClick}>
+      <Button className="w-32" onClick={onDownloadClick} disabled={row.contentArchived}>
         <Download className="-ml-1 mr-2 inline h-4 w-4" />
         <Trans>Download</Trans>
       </Button>

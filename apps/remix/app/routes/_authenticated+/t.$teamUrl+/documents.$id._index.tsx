@@ -157,7 +157,13 @@ export default function DocumentPage() {
           gradient
         >
           <CardContent className="p-2">
-            <PDFViewer document={document} key={documentData.id} documentData={documentData} />
+            <PDFViewer 
+              document={document} 
+              key={documentData.id} 
+              documentData={documentData}
+              contentArchived={document.contentArchived}
+              archivedAt={document.archivedAt}
+            />
           </CardContent>
         </Card>
 

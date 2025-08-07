@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react';
 import type { MessageDescriptor } from '@lingui/core';
 import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
-import { CheckCircle2, Clock, File, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, File, XCircle, Archive } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react/dist/lucide-react';
 
 import type { ExtendedDocumentStatus } from '@documenso/prisma/types/extended-document-status';
@@ -55,20 +55,31 @@ export const FRIENDLY_STATUS_MAP: Record<ExtendedDocumentStatus, FriendlyStatus>
   },
 };
 
+export const DELETED_STATUS = {
+  label: msg`Deleted`,
+  labelExtended: msg`Document deleted`,
+  icon: Archive,
+  color: 'text-gray-500 dark:text-gray-400',
+};
+
 export type DocumentStatusProps = HTMLAttributes<HTMLSpanElement> & {
   status: ExtendedDocumentStatus;
+  contentArchived?: boolean;
   inheritColor?: boolean;
 };
 
 export const DocumentStatus = ({
   className,
   status,
+  contentArchived,
   inheritColor,
   ...props
 }: DocumentStatusProps) => {
   const { _ } = useLingui();
 
-  const { label, icon: Icon, color } = FRIENDLY_STATUS_MAP[status];
+  // Show deleted status if document content is archived
+  const displayStatus = contentArchived ? DELETED_STATUS : FRIENDLY_STATUS_MAP[status];
+  const { label, icon: Icon, color } = displayStatus;
 
   return (
     <span className={cn('flex items-center', className)} {...props}>

@@ -77,7 +77,12 @@ export const DocumentsTable = ({
       {
         header: _(msg`Status`),
         accessorKey: 'status',
-        cell: ({ row }) => <DocumentStatus status={row.original.status} />,
+        cell: ({ row }) => (
+          <DocumentStatus 
+            status={row.original.status} 
+            contentArchived={row.original.contentArchived}
+          />
+        ),
         size: 140,
       },
       {
@@ -123,6 +128,12 @@ export const DocumentsTable = ({
         onPaginationChange={onPaginationChange}
         columnVisibility={{
           sender: team !== undefined,
+        }}
+        getRowClassName={(row) => {
+          if (row.contentArchived) {
+            return 'bg-gray-100 dark:bg-gray-700';
+          }
+          return '';
         }}
         error={{
           enable: isLoadingError || false,

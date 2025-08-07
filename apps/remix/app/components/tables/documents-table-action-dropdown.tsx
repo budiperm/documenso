@@ -128,6 +128,11 @@ export const DocumentsTableActionDropdown = ({
 
   const nonSignedRecipients = row.recipients.filter((item) => item.signingStatus !== 'SIGNED');
 
+  // Don't show dropdown for deleted documents
+  if (row.contentArchived) {
+    return null;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger data-testid="document-table-action-btn">

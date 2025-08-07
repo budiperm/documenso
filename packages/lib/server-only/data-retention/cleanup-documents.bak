@@ -1,0 +1,619 @@
+import { DocumentStatus } from '@prisma/client';
+
+import { prisma } from '@documenso/prisma';
+
+import { DATA_RETENTION_DAYS, DATA_RETENTION_COMPLETED_ONLY, IS_DATA_RETENTION_ENABLED } from '../../constants/auth';
+
+export interface CleanupResult {
+  deletedDocumentData: number;
+  totalSizeCleaned: number; // in bytes
+  documentsProcessed: number;
+  errors: string[];
+}
+
+export interface CleanupStats {
+  documentsToProcess: number;
+  estimatedDataToDelete: number; // in bytes
+  oldestDocumentDate: Date | null;
+  retentionDate: Date;
+  isEnabled: boolean;
+  retentionDays: number;
+  completedOnly: boolean;
+}
+
+/**
+ * Data retention service for cleaning up old document PDF data
+ * This service removes PDF content while preserving metadata for documents older than the retention period
+ */
+
+import { prisma } from '@documenso/prisma';
+import type { DocumentStatus } from '@documenso/prisma/client';
+import { DATA_RETENTION_DAYS, DATA_RETENTION_COMPLETED_ONLY, IS_DATA_RETENTION_ENABLED } from '../../constants/auth';
+
+export interface CleanupStats {
+  processedDocuments: number;
+  deletedDocumentData: number;
+  totalBytesFreed: number;
+  totalDataSizeBeforeCleanup: number;
+  cleanupDurationMs: number;
+  oldestDocumentProcessed: Date | null;
+  documentsSkipped: number;
+  errors: string[];
+}
+
+export interface StorageStats {
+  totalDocuments: number;
+  documentsWithData: number;
+  documentsWithoutData: number;
+  estimatedDataSizeBytes: number;
+  isEnabled: boolean;
+  retentionDays: number;
+  completedOnly: boolean;
+}
+
+/**
+ * Main function to clean up old document data
+ */
+export async function cleanupOldDocumentData(): Promise<CleanupStats> {
+  if (!IS_DATA_RETENTION_ENABLED) {
+    throw new Error('Data retention is not enabled');
+  }
+
+  const startTime = Date.now();
+  const retentionCutoff = new Date(Date.now() - (DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000));
+  
+  const result: CleanupStats = {
+    processedDocuments: 0,
+    deletedDocumentData: 0,
+    totalBytesFreed: 0,
+    totalDataSizeBeforeCleanup: 0,
+    cleanupDurationMs: 0,
+    oldestDocumentProcessed: null,
+    documentsSkipped: 0,
+    errors: []
+  };
+
+  try {
+    const statusCondition: { in?: DocumentStatus[]; equals?: DocumentStatus } = DATA_RETENTION_COMPLETED_ONLY 
+      ? { equals: 'COMPLETED' }
+      : { in: ['COMPLETED', 'PENDING'] };
+
+    // Find documents older than retention period with data
+    const documentsToProcess = await prisma.document.findMany({
+      where: {
+        updatedAt: {
+          lt: retentionCutoff,
+        },
+        status: statusCondition.equals || statusCondition,
+      },
+      include: {
+        documentData: {
+          where: {
+            data: {
+              not: null,
+            },
+          },
+        },
+      },
+      take: 100, // Process in batches to avoid memory issues
+    });
+
+    if (documentsToProcess.length === 0) {
+      result.cleanupDurationMs = Date.now() - startTime;
+      return result;
+    }
+
+    // Track oldest document
+    result.oldestDocumentProcessed = Math.min(
+      ...documentsToProcess.map(doc => doc.updatedAt.getTime())
+    ) ? new Date(Math.min(...documentsToProcess.map(doc => doc.updatedAt.getTime()))) : null;
+
+    for (const document of documentsToProcess) {
+      try {
+        let documentSizeCleaned = 0;
+
+        // Process each document data entry
+        if (document.documentData && document.documentData.length > 0) {
+          for (const docData of document.documentData) {
+            try {
+              if (docData.data) {
+                const dataSize = Buffer.byteLength(docData.data, 'utf8');
+                
+                await prisma.documentData.updateMany({
+                  where: { id: docData.id },
+                  data: {
+                    data: '',
+                    initialData: '',
+                  },
+                });
+
+                documentSizeCleaned += dataSize;
+                result.deletedDocumentData++;
+              }
+            } catch (error) {
+              result.errors.push(`Error processing document data ${docData.id}: ${error}`);
+            }
+          }
+        }
+
+        if (documentSizeCleaned > 0) {
+          result.processedDocuments++;
+          result.totalBytesFreed += documentSizeCleaned;
+        } else {
+          result.documentsSkipped++;
+        }
+      } catch (error) {
+        result.errors.push(`Error processing document ${document.id}: ${error}`);
+        result.documentsSkipped++;
+      }
+    }
+
+    result.cleanupDurationMs = Date.now() - startTime;
+    return result;
+  } catch (error) {
+    result.errors.push(`Fatal error during cleanup: ${error}`);
+    result.cleanupDurationMs = Date.now() - startTime;
+    return result;
+  }
+}
+
+/**
+ * Get estimated storage statistics before cleanup
+ */
+export async function getCleanupStats(): Promise<StorageStats> {
+  const retentionCutoff = new Date(Date.now() - (DATA_RETENTION_DAYS * 24 * 60 * 60 * 1000));
+  
+  const statusCondition = DATA_RETENTION_COMPLETED_ONLY 
+    ? { status: 'COMPLETED' as DocumentStatus }
+    : { 
+        status: {
+          in: ['COMPLETED', 'PENDING'] as DocumentStatus[]
+        }
+      };
+
+  // Get total documents
+  const totalDocuments = await prisma.document.count();
+
+  // Get documents with data that would be affected
+  const documentsWithData = await prisma.document.count({
+    where: {
+      updatedAt: {
+        lt: retentionCutoff,
+      },
+      ...statusCondition,
+      documentData: {
+        some: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+  });
+
+  const documentsWithoutData = totalDocuments - documentsWithData;
+
+  // Sample some documents to estimate data size
+  let estimatedDataToDelete = 0;
+  const sampleDocs = await prisma.document.findMany({
+    where: {
+      updatedAt: {
+        lt: retentionCutoff,
+      },
+      ...statusCondition,
+      documentData: {
+        some: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+    include: {
+      documentData: {
+        where: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+    take: 10,
+  });
+
+  // Calculate estimated size from sample
+  let sampleCount = 0;
+  for (const doc of sampleDocs) {
+    if (doc.documentData && doc.documentData.length > 0) {
+      for (const docData of doc.documentData) {
+        if (docData.data) {
+          estimatedDataToDelete += Buffer.byteLength(docData.data, 'utf8');
+          sampleCount++;
+        }
+      }
+    }
+  }
+
+  // Extrapolate to all documents
+  if (sampleCount > 0) {
+    const avgDataSize = estimatedDataToDelete / sampleCount;
+    const totalDocumentDataCount = await prisma.documentData.count({
+      where: {
+        document: {
+          updatedAt: {
+            lt: retentionCutoff,
+          },
+          ...statusCondition,
+        },
+        data: {
+          not: '',
+        },
+      },
+    });
+    estimatedDataToDelete = avgDataSize * totalDocumentDataCount;
+  }
+
+  // Find the oldest document
+  const oldestDoc = await prisma.document.findFirst({
+    where: {
+      documentData: {
+        some: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+    orderBy: {
+      updatedAt: 'asc',
+    },
+    select: {
+      updatedAt: true,
+    },
+  });
+
+  return {
+    totalDocuments,
+    documentsWithData,
+    documentsWithoutData,
+    estimatedDataSizeBytes: estimatedDataToDelete,
+    isEnabled: IS_DATA_RETENTION_ENABLED,
+    retentionDays: DATA_RETENTION_DAYS,
+    completedOnly: DATA_RETENTION_COMPLETED_ONLY,
+  };
+}
+
+/**
+ * Get current storage statistics
+ */
+export async function getStorageStats(): Promise<{
+  totalDocuments: number;
+  totalDocumentData: number;
+  documentsWithData: number;
+  documentsWithoutData: number;
+  estimatedTotalSizeBytes: number;
+}> {
+  const totalDocuments = await prisma.document.count();
+  const totalDocumentData = await prisma.documentData.count();
+
+  const documentsWithData = await prisma.document.count({
+    where: {
+      documentData: {
+        some: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+  });
+
+  const documentsWithoutData = totalDocuments - documentsWithData;
+
+  // Sample for size estimation
+  const sampleDocs = await prisma.document.findMany({
+    include: {
+      documentData: {
+        where: {
+          data: {
+            not: '',
+          },
+        },
+      },
+    },
+    take: 10,
+  });
+
+  let estimatedTotalSize = 0;
+  let sampleCount = 0;
+
+  for (const doc of sampleDocs) {
+    if (doc.documentData && doc.documentData.length > 0) {
+      for (const docData of doc.documentData) {
+        if (docData.data) {
+          estimatedTotalSize += Buffer.byteLength(docData.data, 'utf8');
+          sampleCount++;
+        }
+      }
+    }
+  }
+
+  if (sampleCount > 0) {
+    const avgDataSize = estimatedTotalSize / sampleCount;
+    const totalDataWithContent = await prisma.documentData.count({
+      where: {
+        data: {
+          not: '',
+        },
+      },
+    });
+    estimatedTotalSize = avgDataSize * totalDataWithContent;
+  }
+
+  return {
+    totalDocuments,
+    totalDocumentData,
+    documentsWithData,
+    documentsWithoutData,
+    estimatedTotalSizeBytes: estimatedTotalSize,
+  };
+}
+export async function cleanupOldDocumentData(): Promise<CleanupResult> {
+  if (!IS_DATA_RETENTION_ENABLED) {
+    console.log('Data retention is disabled, skipping cleanup');
+    return { deletedDocumentData: 0, totalSizeCleaned: 0, documentsProcessed: 0, errors: [] };
+  }
+
+  const retentionDate = new Date();
+  retentionDate.setDate(retentionDate.getDate() - DATA_RETENTION_DAYS);
+
+  console.log(`Starting PDF data cleanup for documents older than ${retentionDate.toISOString()}`);
+  console.log(`Cleanup mode: ${DATA_RETENTION_COMPLETED_ONLY ? 'completed documents only' : 'all documents'}`);
+
+  const result: CleanupResult = {
+    deletedDocumentData: 0,
+    totalSizeCleaned: 0,
+    documentsProcessed: 0,
+    errors: [],
+  };
+
+  try {
+    // Build where condition based on settings
+    const whereCondition: any = {
+      updatedAt: {
+        lt: retentionDate,
+      },
+      documentData: {
+        some: {}, // Only process documents that have document data
+      },
+    };
+
+    // Only process completed documents if the setting is enabled
+    if (DATA_RETENTION_COMPLETED_ONLY) {
+      whereCondition.status = DocumentStatus.COMPLETED;
+    }
+
+    // Find documents that match our retention criteria
+    const documentsToProcess = await prisma.document.findMany({
+      where: whereCondition,
+      include: {
+        documentData: true,
+      },
+      orderBy: {
+        updatedAt: 'asc',
+      },
+    });
+
+    console.log(`Found ${documentsToProcess.length} documents with data to clean up`);
+
+    for (const document of documentsToProcess) {
+      try {
+        let documentSizeCleaned = 0;
+
+        // Process each document data entry
+        for (const docData of document.documentData) {
+          try {
+            if (docData.data) {
+              const dataSize = Buffer.byteLength(docData.data, 'utf8');
+              
+              await prisma.documentData.updateMany({
+                where: { id: docData.id },
+                data: {
+                  data: '',
+                  initialData: '',
+                },
+              });
+
+              documentSizeCleaned += dataSize;
+              result.deletedDocumentData++;
+            }
+          } catch (error) {
+            const errorMsg = `Failed to clean document data entry ${docData.id}: ${error}`;
+            console.error(errorMsg);
+            result.errors.push(errorMsg);
+          }
+        }
+
+        result.totalSizeCleaned += documentSizeCleaned;
+        result.documentsProcessed++;
+
+        console.log(
+          `Cleaned document: ${document.title} (ID: ${document.id}) - Freed ${Math.round(documentSizeCleaned / 1024)} KB`
+        );
+      } catch (error) {
+        const errorMsg = `Failed to clean document data for ${document.id}: ${error}`;
+        console.error(errorMsg);
+        result.errors.push(errorMsg);
+      }
+    }
+
+    console.log(
+      `Cleanup completed: ${result.documentsProcessed} documents processed, ` +
+      `${result.deletedDocumentData} data entries cleaned, ` +
+      `${Math.round(result.totalSizeCleaned / 1024 / 1024)} MB freed`
+    );
+
+    if (result.errors.length > 0) {
+      console.error(`Cleanup had ${result.errors.length} errors:`, result.errors);
+    }
+
+    return result;
+  } catch (error) {
+    const errorMsg = `Data retention cleanup failed: ${error}`;
+    console.error(errorMsg);
+    result.errors.push(errorMsg);
+    return result;
+  }
+}
+
+/**
+ * Get statistics about documents that would be affected by cleanup
+ */
+export async function getCleanupStats(): Promise<CleanupStats> {
+  const retentionDate = new Date();
+  retentionDate.setDate(retentionDate.getDate() - DATA_RETENTION_DAYS);
+
+  const whereCondition: any = {
+    updatedAt: {
+      lt: retentionDate,
+    },
+    documentData: {
+      some: {},
+    },
+  };
+
+  if (DATA_RETENTION_COMPLETED_ONLY) {
+    whereCondition.status = DocumentStatus.COMPLETED;
+  }
+
+  const documentsToProcess = await prisma.document.count({
+    where: whereCondition,
+  });
+
+  // Estimate data size by sampling some documents
+  const sampleDocuments = await prisma.document.findMany({
+    where: whereCondition,
+    include: {
+      documentData: true,
+    },
+    take: 10,
+    orderBy: {
+      updatedAt: 'asc',
+    },
+  });
+
+  let estimatedDataToDelete = 0;
+  let sampleCount = 0;
+
+  for (const doc of sampleDocuments) {
+    for (const docData of doc.documentData) {
+      if (docData.data) {
+        estimatedDataToDelete += Buffer.byteLength(docData.data, 'utf8');
+        sampleCount++;
+      }
+    }
+  }
+
+  // Extrapolate from sample to total
+  if (sampleCount > 0) {
+    const avgDataSize = estimatedDataToDelete / sampleCount;
+    const totalDocumentDataCount = await prisma.documentData.count({
+      where: {
+        document: whereCondition,
+        data: { not: null },
+      },
+    });
+    estimatedDataToDelete = avgDataSize * totalDocumentDataCount;
+  }
+
+  // Find the oldest document
+  const oldestDoc = await prisma.document.findFirst({
+    where: {
+      documentData: {
+        some: {},
+      },
+    },
+    orderBy: {
+      updatedAt: 'asc',
+    },
+    select: {
+      updatedAt: true,
+    },
+  });
+
+  return {
+    documentsToProcess,
+    estimatedDataToDelete,
+    oldestDocumentDate: oldestDoc?.updatedAt || null,
+    retentionDate,
+    isEnabled: IS_DATA_RETENTION_ENABLED,
+    retentionDays: DATA_RETENTION_DAYS,
+    completedOnly: DATA_RETENTION_COMPLETED_ONLY,
+  };
+}
+
+/**
+ * Get current storage usage statistics
+ */
+export async function getStorageStats() {
+  const totalDocuments = await prisma.document.count();
+  const completedDocuments = await prisma.document.count({
+    where: { status: DocumentStatus.COMPLETED },
+  });
+
+  const documentsWithData = await prisma.document.count({
+    where: {
+      documentData: {
+        some: {
+          data: { not: null },
+        },
+      },
+    },
+  });
+
+  const documentsWithoutData = await prisma.document.count({
+    where: {
+      documentData: {
+        every: {
+          data: null,
+        },
+      },
+    },
+  });
+
+  // Sample to estimate total storage usage
+  const sampleSize = Math.min(100, totalDocuments);
+  const sampleDocuments = await prisma.documentData.findMany({
+    where: {
+      data: { not: null },
+    },
+    take: sampleSize,
+    select: {
+      data: true,
+    },
+  });
+
+  let totalSampleSize = 0;
+  for (const doc of sampleDocuments) {
+    if (doc.data) {
+      totalSampleSize += Buffer.byteLength(doc.data, 'utf8');
+    }
+  }
+
+  const totalDocumentDataWithContent = await prisma.documentData.count({
+    where: { data: { not: null } },
+  });
+
+  const estimatedTotalStorage = sampleDocuments.length > 0 
+    ? (totalSampleSize / sampleDocuments.length) * totalDocumentDataWithContent 
+    : 0;
+
+  return {
+    totalDocuments,
+    completedDocuments,
+    documentsWithData,
+    documentsWithoutData,
+    estimatedTotalStorage,
+    totalDocumentDataWithContent,
+  };
+}

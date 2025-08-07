@@ -49,6 +49,8 @@ const PDFLoader = () => (
 export type PDFViewerProps = {
   className?: string;
   documentData: DocumentData;
+  contentArchived?: boolean;
+  archivedAt?: Date | null;
   onDocumentLoad?: (_doc: LoadedPDFDocument) => void;
   onPageClick?: OnPDFViewerPageClick;
   [key: string]: unknown;
@@ -57,6 +59,8 @@ export type PDFViewerProps = {
 export const PDFViewer = ({
   className,
   documentData,
+  contentArchived = false,
+  archivedAt,
   onDocumentLoad,
   onPageClick,
   ...props
@@ -146,6 +150,12 @@ export const PDFViewer = ({
       try {
         setIsDocumentBytesLoading(true);
 
+        // Check if document content is archived
+        if (contentArchived) {
+          setIsDocumentBytesLoading(false);
+          return;
+        }
+
         const bytes = await getFile(memoizedData);
 
         setDocumentBytes(bytes);
@@ -163,11 +173,31 @@ export const PDFViewer = ({
     };
 
     void fetchDocumentBytes();
-  }, [memoizedData, toast]);
+  }, [memoizedData, toast, contentArchived]);
 
   return (
     <div ref={$el} className={cn('overflow-hidden', className)} {...props}>
-      {isLoading ? (
+      {contentArchived ? (
+        <div className="dark:bg-background flex h-[80vh] max-h-[60rem] flex-col items-center justify-center bg-white/50">
+          <div className="text-muted-foreground text-center max-w-md">
+            <div className="mb-4 text-4xl">📄</div>
+            <p className="text-lg font-medium mb-2">
+              <Trans>Document Content Deleted</Trans>
+            </p>
+            <p className="mb-2">
+              <Trans>The PDF content of this document has been automatically removed to save storage space.</Trans>
+            </p>
+            <p className="text-sm">
+              <Trans>Document metadata, signatures, and audit logs are still preserved.</Trans>
+            </p>
+            {archivedAt && (
+              <p className="text-xs mt-3 opacity-70">
+                <Trans>Archived on {archivedAt.toLocaleDateString()}</Trans>
+              </p>
+            )}
+          </div>
+        </div>
+      ) : isLoading ? (
         <div
           className={cn(
             'flex h-[80vh] max-h-[60rem] w-full flex-col items-center justify-center overflow-hidden rounded',

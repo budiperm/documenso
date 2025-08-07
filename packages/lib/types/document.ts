@@ -127,6 +127,8 @@ export const ZDocumentManySchema = DocumentSchema.pick({
   templateId: true,
   folderId: true,
   useLegacyFieldInsertion: true,
+  contentArchived: true,
+  archivedAt: true,
 }).extend({
   user: UserSchema.pick({
     id: true,

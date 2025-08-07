@@ -29,6 +29,7 @@ export interface DataTableProps<TData, TValue> {
   emptyState?: React.ReactNode;
   hasFilters?: boolean;
   children?: DataTableChildren<TData>;
+  getRowClassName?: (row: TData) => string;
   skeleton?: {
     enable: boolean;
     rows: number;
@@ -54,6 +55,7 @@ export function DataTable<TData, TValue>({
   onPaginationChange,
   children,
   emptyState,
+  getRowClassName,
 }: DataTableProps<TData, TValue>) {
   const pagination = useMemo<PaginationState>(() => {
     if (currentPage !== undefined && perPage !== undefined) {
@@ -115,20 +117,27 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{
-                        width: `${cell.column.getSize()}px`,
-                      }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const customClassName = getRowClassName ? getRowClassName(row.original) : '';
+                return (
+                  <TableRow 
+                    key={row.id} 
+                    data-state={row.getIsSelected() && 'selected'}
+                    className={customClassName}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          width: `${cell.column.getSize()}px`,
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : error?.enable ? (
               <TableRow>
                 {error.component ?? (
