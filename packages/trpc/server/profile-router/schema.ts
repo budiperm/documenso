@@ -27,3 +27,11 @@ export const ZSetProfileImageMutationSchema = z.object({
 });
 
 export type TSetProfileImageMutationSchema = z.infer<typeof ZSetProfileImageMutationSchema>;
+
+export const ZSearchUsersQuerySchema = z.object({
+  query: z.string().min(2),
+  page: z.number().min(1).optional().default(1),
+  perPage: z.number().min(1).max(50).optional().default(10),
+});
+
+export type TSearchUsersQuerySchema = z.infer<typeof ZSearchUsersQuerySchema>;

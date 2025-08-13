@@ -9,7 +9,7 @@ import { Trans } from '@lingui/react/macro';
 import type { Field, Recipient } from '@prisma/client';
 import { DocumentSigningOrder, RecipientRole, SendStatus } from '@prisma/client';
 import { motion } from 'framer-motion';
-import { GripVerticalIcon, HelpCircle, Plus, Trash } from 'lucide-react';
+import { GripVerticalIcon, HelpCircle, Plus, Trash, Check } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { prop, sortBy } from 'remeda';
 
@@ -36,8 +36,11 @@ import { Input } from '../input';
 import { useStep } from '../stepper';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import { useToast } from '../use-toast';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../command';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import type { TAddSignersFormSchema } from './add-signers.types';
 import { ZAddSignersFormSchema } from './add-signers.types';
+import { trpc as trpcClient } from '@documenso/trpc/client';
 import {
   DocumentFlowFormContainerActions,
   DocumentFlowFormContainerContent,
@@ -134,6 +137,9 @@ export const AddSignersFormPartial = ({
 
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(alwaysShowAdvancedSettings);
   const [showSigningOrderConfirmation, setShowSigningOrderConfirmation] = useState(false);
+  const [emailSuggestions, setEmailSuggestions] = useState<Array<{id: number; email: string; name: string}>>([]);
+  const [showEmailDropdown, setShowEmailDropdown] = useState<{[key: number]: boolean}>({});
+  const [emailSearchValue, setEmailSearchValue] = useState<{[key: number]: string}>({});
 
   const {
     setValue,
@@ -236,6 +242,80 @@ export const AddSignersFormPartial = ({
       });
     }
   };
+
+  // Try to auto-populate the name (and normalise email casing) for registered organisation members.
+  const tryAutofillRegisteredUser = useCallback(
+    async (index: number, emailRaw: string) => {
+      const email = emailRaw?.trim();
+      if (!email || !email.includes('@')) return;
+
+      try {
+        const result = await trpcClient.organisation.member.find.query({
+          organisationId: organisation.id,
+          query: email,
+          page: 1,
+          perPage: 5,
+        });
+
+        const match = result.data.find(
+          (m) => m.email.toLowerCase() === email.toLowerCase(),
+        );
+
+        if (match) {
+          // Only overwrite name if it's empty; always normalise email casing.
+          const currentName = form.getValues(`signers.${index}.name`);
+          setValue(`signers.${index}.email`, match.email, { shouldValidate: true });
+          if (!currentName) {
+            setValue(`signers.${index}.name`, match.name ?? '', { shouldValidate: true });
+          }
+        }
+      } catch {
+        // Silently ignore lookup errors; leave fields as-is.
+      }
+    },
+    [organisation.id, form, setValue],
+  );
+
+  // Search for registered users to show autocomplete suggestions - search all users
+  const searchRegisteredUsers = useCallback(
+    async (query: string, index: number) => {
+      if (!query || query.length < 2) {
+        setEmailSuggestions([]);
+        return;
+      }
+
+      try {
+        // Search all registered users across the platform
+        const result = await trpcClient.profile.searchUsers.query({
+          query: query,
+          page: 1,
+          perPage: 10,
+        });
+
+        const suggestions = result.users.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          name: user.name || ''
+        }));
+        
+        setEmailSuggestions(suggestions);
+      } catch {
+        setEmailSuggestions([]);
+      }
+    },
+    [],
+  );
+
+  // Handle selecting a user from autocomplete
+  const selectUser = useCallback(
+    (index: number, user: {email: string; name: string}) => {
+      setValue(`signers.${index}.email`, user.email, { shouldValidate: true });
+      setValue(`signers.${index}.name`, user.name, { shouldValidate: true });
+      setShowEmailDropdown(prev => ({ ...prev, [index]: false }));
+      setEmailSearchValue(prev => ({ ...prev, [index]: user.email }));
+    },
+    [setValue],
+  );
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
@@ -579,25 +659,79 @@ export const AddSignersFormPartial = ({
                                     )}
 
                                     <FormControl>
-                                      <Input
-                                        type="email"
-                                        placeholder={_(msg`Email`)}
-                                        {...field}
-                                        disabled={
-                                          snapshot.isDragging ||
-                                          isSubmitting ||
-                                          !canRecipientBeModified(signer.nativeId)
+                                      <Popover 
+                                        open={showEmailDropdown[index] || false} 
+                                        onOpenChange={(open) => 
+                                          setShowEmailDropdown(prev => ({ ...prev, [index]: open }))
                                         }
-                                        onKeyDown={onKeyDown}
-                                      />
+                                      >
+                                        <PopoverTrigger asChild>
+                                          <Input
+                                            type="email"
+                                            placeholder={_(msg`Email`)}
+                                            {...field}
+                                            disabled={
+                                              snapshot.isDragging ||
+                                              isSubmitting ||
+                                              !canRecipientBeModified(signer.nativeId)
+                                            }
+                                            onKeyDown={onKeyDown}
+                                            onChange={(e) => {
+                                              field.onChange(e);
+                                              const value = e.target.value;
+                                              setEmailSearchValue(prev => ({ ...prev, [index]: value }));
+                                              
+                                              if (value.length >= 2) {
+                                                searchRegisteredUsers(value, index);
+                                                setShowEmailDropdown(prev => ({ ...prev, [index]: true }));
+                                              } else {
+                                                setShowEmailDropdown(prev => ({ ...prev, [index]: false }));
+                                                setEmailSuggestions([]);
+                                              }
+                                            }}
+                                            onBlur={(e) => {
+                                              field.onBlur();
+                                              // Small delay to allow clicking on dropdown items
+                                              setTimeout(() => {
+                                                void tryAutofillRegisteredUser(index, e.target.value);
+                                              }, 200);
+                                            }}
+                                          />
+                                        </PopoverTrigger>
+                                        {emailSuggestions.length > 0 && (
+                                          <PopoverContent className="w-full p-0" align="start">
+                                            <Command>
+                                              <CommandList>
+                                                <CommandGroup>
+                                                  {emailSuggestions.map((user) => (
+                                                    <CommandItem
+                                                      key={user.id}
+                                                      onSelect={() => selectUser(index, user)}
+                                                      className="cursor-pointer"
+                                                    >
+                                                      <div className="flex flex-col">
+                                                        <span className="font-medium">{user.email}</span>
+                                                        {user.name && (
+                                                          <span className="text-sm text-muted-foreground">
+                                                            {user.name}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                      <Check className="ml-auto h-4 w-4 opacity-50" />
+                                                    </CommandItem>
+                                                  ))}
+                                                </CommandGroup>
+                                              </CommandList>
+                                            </Command>
+                                          </PopoverContent>
+                                        )}
+                                      </Popover>
                                     </FormControl>
 
                                     <FormMessage />
                                   </FormItem>
                                 )}
-                              />
-
-                              <FormField
+                              />                              <FormField
                                 control={form.control}
                                 name={`signers.${index}.name`}
                                 render={({ field }) => (

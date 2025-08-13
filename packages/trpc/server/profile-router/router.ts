@@ -2,6 +2,7 @@ import type { SetAvatarImageOptions } from '@documenso/lib/server-only/profile/s
 import { setAvatarImage } from '@documenso/lib/server-only/profile/set-avatar-image';
 import { deleteUser } from '@documenso/lib/server-only/user/delete-user';
 import { findUserSecurityAuditLogs } from '@documenso/lib/server-only/user/find-user-security-audit-logs';
+import { findUsers } from '@documenso/lib/server-only/user/get-all-users';
 import { getUserById } from '@documenso/lib/server-only/user/get-user-by-id';
 import { updateProfile } from '@documenso/lib/server-only/user/update-profile';
 
@@ -9,6 +10,7 @@ import { adminProcedure, authenticatedProcedure, router } from '../trpc';
 import {
   ZFindUserSecurityAuditLogsSchema,
   ZRetrieveUserByIdQuerySchema,
+  ZSearchUsersQuerySchema,
   ZSetProfileImageMutationSchema,
   ZUpdateProfileMutationSchema,
 } from './schema';
@@ -34,6 +36,19 @@ export const profileRouter = router({
 
     return await getUserById({ id });
   }),
+
+  searchUsers: authenticatedProcedure
+    .input(ZSearchUsersQuerySchema)
+    .query(async ({ input, ctx }) => {
+      const { query, page, perPage } = input;
+
+      return await findUsers({
+        username: query,
+        email: query,
+        page,
+        perPage,
+      });
+    }),
 
   updateProfile: authenticatedProcedure
     .input(ZUpdateProfileMutationSchema)
