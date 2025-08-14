@@ -2,7 +2,7 @@ import { OrganisationType } from '@prisma/client';
 
 import { createCheckoutSession } from '@documenso/ee/server-only/stripe/create-checkout-session';
 import { createCustomer } from '@documenso/ee/server-only/stripe/create-customer';
-import { IS_BILLING_ENABLED, NEXT_PUBLIC_WEBAPP_URL } from '@documenso/lib/constants/app';
+import { IS_BILLING_ENABLED, NEXT_PUBLIC_WEBAPP_URL, NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN } from '@documenso/lib/constants/app';
 import { AppError, AppErrorCode } from '@documenso/lib/errors/app-error';
 import { createOrganisation } from '@documenso/lib/server-only/organisation/create-organisation';
 import { INTERNAL_CLAIM_ID, internalClaims } from '@documenso/lib/types/subscription';
@@ -28,6 +28,17 @@ export const createOrganisationRoute = authenticatedProcedure
         priceId,
       },
     });
+
+    // Check if organisation creation is restricted to admins only
+    if (NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN()) {
+      const hasAdminRole = user.roles && user.roles.includes('ADMIN');
+      
+      if (!hasAdminRole) {
+        throw new AppError(AppErrorCode.UNAUTHORIZED, {
+          message: 'Only administrators can create organisations.',
+        });
+      }
+    }
 
     // Check if user can create a free organiastion.
     if (IS_BILLING_ENABLED() && !priceId) {

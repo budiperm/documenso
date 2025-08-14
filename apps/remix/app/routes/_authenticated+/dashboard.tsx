@@ -6,6 +6,7 @@ import { DateTime } from 'luxon';
 import { Link, redirect } from 'react-router';
 
 import { useSession } from '@documenso/lib/client-only/providers/session';
+import { NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN } from '@documenso/lib/constants/app';
 import { ORGANISATION_MEMBER_ROLE_MAP } from '@documenso/lib/constants/organisations-translations';
 import { TEAM_MEMBER_ROLE_MAP } from '@documenso/lib/constants/teams-translations';
 import { formatAvatarUrl } from '@documenso/lib/utils/avatars';
@@ -32,6 +33,9 @@ export default function DashboardPage() {
   const { t } = useLingui();
 
   const { user, organisations } = useSession();
+
+  const canCreateOrganisation = !NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN() || 
+    (user?.roles && user.roles.includes('ADMIN'));
 
   // Todo: Sort by recent access (TBD by cookies)
   // Teams, flattened with the organisation data still attached.
@@ -70,15 +74,21 @@ export default function DashboardPage() {
                 <Trans>No organisations found</Trans>
               </p>
               <p className="text-muted-foreground text-sm">
-                <Trans>Create an organisation to get started.</Trans>
+                {canCreateOrganisation ? (
+                  <Trans>Create an organisation to get started.</Trans>
+                ) : (
+                  <Trans>Contact an administrator to create an organisation.</Trans>
+                )}
               </p>
             </div>
 
-            <Button asChild className="mt-4" variant="outline">
-              <Link to="/settings/organisations?action=add-organisation">
-                <Trans>Create organisation</Trans>
-              </Link>
-            </Button>
+            {canCreateOrganisation && (
+              <Button asChild className="mt-4" variant="outline">
+                <Link to="/settings/organisations?action=add-organisation">
+                  <Trans>Create organisation</Trans>
+                </Link>
+              </Button>
+            )}
           </div>
         )}
 
