@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { match } from 'ts-pattern';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
+import { APP_NAME } from '@documenso/lib/constants/app';
 import { DATE_FORMATS, DEFAULT_DOCUMENT_DATE_FORMAT } from '@documenso/lib/constants/date-formats';
 import {
   DOCUMENT_DISTRIBUTION_METHODS,
@@ -446,7 +447,7 @@ export const AddTemplateSettingsFormPartial = ({
                                       </SelectItem>
                                     ))}
 
-                                    <SelectItem value={'-1'}>Documenso</SelectItem>
+                                    <SelectItem value={'-1'}>{APP_NAME()}</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </FormControl>

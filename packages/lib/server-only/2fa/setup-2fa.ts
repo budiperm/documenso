@@ -6,13 +6,14 @@ import { createTOTPKeyURI } from 'oslo/otp';
 import { prisma } from '@documenso/prisma';
 
 import { DOCUMENSO_ENCRYPTION_KEY } from '../../constants/crypto';
+import { APP_NAME } from '../../constants/app';
 import { symmetricEncrypt } from '../../universal/crypto';
 
 type SetupTwoFactorAuthenticationOptions = {
   user: Pick<User, 'id' | 'email'>;
 };
 
-const ISSUER = 'Documenso';
+const ISSUER = APP_NAME();
 
 export const setupTwoFactorAuthentication = async ({
   user,

@@ -53,7 +53,7 @@ const themeConfig: DocsThemeConfig = {
       <span>
         {new Date().getFullYear()} ©{' '}
         <a href="https://documen.so" target="_blank">
-          Documenso
+          {APP_NAME()}
         </a>
         .
       </span>
@@ -62,8 +62,9 @@ const themeConfig: DocsThemeConfig = {
   primaryHue: 100,
   primarySaturation: 48.47,
   useNextSeoProps() {
+    const appName = APP_NAME();
     return {
-      titleTemplate: '%s | Documenso Docs',
+      titleTemplate: `%s | ${appName} Docs`,
     };
   },
 };

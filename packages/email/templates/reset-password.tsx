@@ -4,6 +4,7 @@ import { Trans } from '@lingui/react/macro';
 
 import { Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from '../components';
 import { useBranding } from '../providers/branding';
+import { APP_NAME } from '@documenso/lib/constants/app';
 import { TemplateFooter } from '../template-components/template-footer';
 import type { TemplateResetPasswordProps } from '../template-components/template-reset-password';
 import { TemplateResetPassword } from '../template-components/template-reset-password';
@@ -38,7 +39,7 @@ export const ResetPasswordTemplate = ({
               ) : (
                 <Img
                   src={getAssetUrl('/static/logo.png')}
-                  alt="Documenso Logo"
+                  alt={`${APP_NAME()} Logo`}
                   className="mb-4 h-6"
                 />
               )}

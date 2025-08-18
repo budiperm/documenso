@@ -1,4 +1,5 @@
-import { msg } from '@lingui/core/macro';
+import import { TemplateDocumentImage } from '../template-components/template-document-image';
+import { APP_NAME } from '@documenso/lib/constants/app'; msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 
@@ -38,7 +39,7 @@ export const RecipientRemovedFromDocumentTemplate = ({
               ) : (
                 <Img
                   src={getAssetUrl('/static/logo.png')}
-                  alt="Documenso Logo"
+                  alt={`${APP_NAME()} Logo`}
                   className="mb-4 h-6"
                 />
               )}

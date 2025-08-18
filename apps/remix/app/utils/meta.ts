@@ -48,7 +48,7 @@ export const appMetaTags = (title?: string) => {
     },
     {
       name: 'twitter:site',
-      content: '@documenso',
+      content: `@${appName.toLowerCase()}`,
     },
     {
       name: 'twitter:description',
