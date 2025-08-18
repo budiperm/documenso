@@ -8,7 +8,7 @@ import { Link } from 'react-router';
 import { z } from 'zod';
 
 import { useCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
-import { DATA_RETENTION_DAYS } from '@documenso/lib/constants/auth';
+import { DATA_RETENTION_DAYS, IS_DATA_RETENTION_ENABLED } from '@documenso/lib/constants/auth';
 import { formatAvatarUrl } from '@documenso/lib/utils/avatars';
 import { parseToIntegerArray } from '@documenso/lib/utils/params';
 import { formatDocumentsPath } from '@documenso/lib/utils/teams';
@@ -41,6 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Pass server-side environment data to client
   return {
     dataRetentionDays: DATA_RETENTION_DAYS,
+    dataRetentionEnabled: IS_DATA_RETENTION_ENABLED,
   };
 }
 
@@ -62,6 +63,7 @@ export default function DocumentsPage() {
   // Get retention time for display from server data
   const retentionDays = loaderData.dataRetentionDays;
   const retentionTime = retentionDays === 1 ? '1 day' : `${retentionDays} days`;
+  const retentionEnabled = loaderData.dataRetentionEnabled;
 
   const { folderId } = useParams();
   const [searchParams] = useSearchParams();
@@ -210,25 +212,27 @@ export default function DocumentsPage() {
           </div>
           
           {/* Data Retention Information */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  <Trans>Data Retention Policy Active</Trans>
-                </h4>
-                <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-                  <Trans>
-                    Document content is automatically deleted in {retentionTime}. Document metadata, signatures, and audit logs are preserved.
-                  </Trans>
-                </p>
+          {retentionEnabled && (
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                    <Trans id="dataRetention.title">Data Retention Policy Active</Trans>
+                  </h4>
+                  <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                    <Trans id="dataRetention.banner">
+                      Document content is automatically deleted in {retentionTime}. Document metadata, signatures, and audit logs are preserved.
+                    </Trans>
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {documentToMove && (

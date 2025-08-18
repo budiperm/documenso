@@ -66,11 +66,13 @@ export const DocumentPageViewDropdown = ({ document }: DocumentPageViewDropdownP
   const isComplete = isDocumentCompleted(document);
   const isCurrentTeamDocument = team && document.team?.url === team.url;
   const canManageDocument = Boolean(isOwner || isCurrentTeamDocument);
+  const isContentArchived = Boolean((document as any).contentArchived);
 
   const documentsPath = formatDocumentsPath(team.url);
 
   const onDownloadClick = async () => {
     try {
+      if (isContentArchived) return; // Safety guard
       const documentWithData = await trpcClient.document.getDocumentById.query(
         {
           documentId: document.id,
@@ -131,7 +133,7 @@ export const DocumentPageViewDropdown = ({ document }: DocumentPageViewDropdownP
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger disabled={isContentArchived}>
         <MoreHorizontal className="text-muted-foreground h-5 w-5" />
       </DropdownMenuTrigger>
 
@@ -149,17 +151,19 @@ export const DocumentPageViewDropdown = ({ document }: DocumentPageViewDropdownP
           </DropdownMenuItem>
         )}
 
-        {isComplete && (
+        {isComplete && !isContentArchived && (
           <DropdownMenuItem onClick={onDownloadClick}>
             <Download className="mr-2 h-4 w-4" />
             <Trans>Download</Trans>
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem onClick={onDownloadOriginalClick}>
-          <Download className="mr-2 h-4 w-4" />
-          <Trans>Download Original</Trans>
-        </DropdownMenuItem>
+        {!isContentArchived && (
+          <DropdownMenuItem onClick={onDownloadOriginalClick}>
+            <Download className="mr-2 h-4 w-4" />
+            <Trans>Download Original</Trans>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuItem asChild>
           <Link to={`${documentsPath}/${document.id}/logs`}>

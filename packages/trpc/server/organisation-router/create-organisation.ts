@@ -31,7 +31,16 @@ export const createOrganisationRoute = authenticatedProcedure
 
     // Check if organisation creation is restricted to admins only
     if (NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN()) {
-      const hasAdminRole = user.roles && user.roles.includes('ADMIN');
+      const userWithRoles = await prisma.user.findFirstOrThrow({
+        where: {
+          id: user.id,
+        },
+        select: {
+          roles: true,
+        },
+      });
+      
+      const hasAdminRole = userWithRoles.roles.includes('ADMIN');
       
       if (!hasAdminRole) {
         throw new AppError(AppErrorCode.UNAUTHORIZED, {

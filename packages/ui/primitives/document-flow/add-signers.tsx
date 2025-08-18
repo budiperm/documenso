@@ -279,7 +279,7 @@ export const AddSignersFormPartial = ({
   // Search for registered users to show autocomplete suggestions - search all users
   const searchRegisteredUsers = useCallback(
     async (query: string, index: number) => {
-      if (!query || query.length < 2) {
+      if (!query || query.length < 4) {
         setEmailSuggestions([]);
         return;
       }

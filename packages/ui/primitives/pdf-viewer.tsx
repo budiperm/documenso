@@ -15,6 +15,7 @@ import { getFile } from '@documenso/lib/universal/upload/get-file';
 
 import { cn } from '../lib/utils';
 import { useToast } from './use-toast';
+import { Button } from './button';
 
 export type LoadedPDFDocument = PDFDocumentProxy;
 
@@ -53,6 +54,7 @@ export type PDFViewerProps = {
   archivedAt?: Date | null;
   onDocumentLoad?: (_doc: LoadedPDFDocument) => void;
   onPageClick?: OnPDFViewerPageClick;
+  auditLogsHref?: string;
   [key: string]: unknown;
 } & Omit<React.HTMLAttributes<HTMLDivElement>, 'onPageClick'>;
 
@@ -63,6 +65,7 @@ export const PDFViewer = ({
   archivedAt,
   onDocumentLoad,
   onPageClick,
+  auditLogsHref,
   ...props
 }: PDFViewerProps) => {
   const { _ } = useLingui();
@@ -194,6 +197,15 @@ export const PDFViewer = ({
               <p className="text-xs mt-3 opacity-70">
                 <Trans>Archived on {archivedAt.toLocaleDateString()}</Trans>
               </p>
+            )}
+            {auditLogsHref && (
+              <div className="mt-4">
+                <Button asChild>
+                  <a href={auditLogsHref}>
+                    <Trans>Open Audit Log</Trans>
+                  </a>
+                </Button>
+              </div>
             )}
           </div>
         </div>

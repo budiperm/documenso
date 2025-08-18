@@ -132,6 +132,18 @@ export default function AuditLog({ loaderData }: Route.ComponentProps) {
             </span>
           </p>
 
+          {document.archivedAt && (
+            <p>
+              <span className="font-medium">{_(msg`Archived On`)}</span>
+
+              <span className="mt-1 block">
+                {DateTime.fromJSDate(document.archivedAt)
+                  .setLocale(APP_I18N_OPTIONS.defaultLocale)
+                  .toFormat('yyyy-mm-dd hh:mm:ss a (ZZZZ)')}
+              </span>
+            </p>
+          )}
+
           <p>
             <span className="font-medium">{_(msg`Time Zone`)}</span>
 

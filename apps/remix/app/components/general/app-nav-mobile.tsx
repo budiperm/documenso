@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 
 import { useLingui } from '@lingui/react/macro';
 import { Trans } from '@lingui/react/macro';
-import { ReadStatus } from '@prisma/client';
 import { Link } from 'react-router';
 
 import LogoImage from '@documenso/assets/logo.png';
 import { authClient } from '@documenso/auth/client';
 import { useSession } from '@documenso/lib/client-only/providers/session';
+import { APP_LOGO, APP_NAME } from '@documenso/lib/constants/app';
 import { isPersonalLayout } from '@documenso/lib/utils/organisations';
 import { trpc } from '@documenso/trpc/react';
 import { Sheet, SheetContent } from '@documenso/ui/primitives/sheet';
@@ -24,12 +24,15 @@ export const AppNavMobile = ({ isMenuOpen, onMenuOpenChange }: AppNavMobileProps
   const { t } = useLingui();
 
   const { organisations } = useSession();
+  
+  const customLogo = APP_LOGO();
+  const appName = APP_NAME();
 
   const currentTeam = useOptionalCurrentTeam();
 
   const { data: unreadCountData } = trpc.document.inbox.getCount.useQuery(
     {
-      readStatus: ReadStatus.NOT_OPENED,
+      readStatus: 'NOT_OPENED',
     },
     {
       // refetchInterval: 30000, // Refetch every 30 seconds
@@ -85,8 +88,8 @@ export const AppNavMobile = ({ isMenuOpen, onMenuOpenChange }: AppNavMobileProps
       <SheetContent className="flex w-full max-w-[350px] flex-col">
         <Link to="/" onClick={handleMenuItemClick}>
           <img
-            src={LogoImage}
-            alt="Documenso Logo"
+            src={customLogo || LogoImage}
+            alt={`${appName} Logo`}
             className="dark:invert"
             width={170}
             height={25}

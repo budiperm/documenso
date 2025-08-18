@@ -16,13 +16,26 @@ export default function TeamsSettingsPage() {
   const canCreateOrganisation = !NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN() || 
     (user?.roles && user.roles.includes('ADMIN'));
 
+  const handleUnauthorizedClick = () => {
+    alert('Unauthorized: You do not have permission to create organisations.');
+  };
+
   return (
     <div>
       <SettingsHeader
         title={_(msg`Organisations`)}
         subtitle={_(msg`Manage all organisations you are currently associated with.`)}
       >
-        {canCreateOrganisation && <OrganisationCreateDialog />}
+        {canCreateOrganisation ? (
+          <OrganisationCreateDialog />
+        ) : (
+          <button
+            onClick={handleUnauthorizedClick}
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-muted-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+          >
+            Create organisation
+          </button>
+        )}
       </SettingsHeader>
 
       <UserOrganisationsTable />

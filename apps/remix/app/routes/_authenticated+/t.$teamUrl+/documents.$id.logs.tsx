@@ -102,6 +102,19 @@ export default function DocumentsLogsPage({ loaderData }: Route.ComponentProps) 
         .setLocale(i18n.locales?.[0] || i18n.locale)
         .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS),
     },
+    // Inject archived date if present
+    ...(
+      document.archivedAt
+        ? [
+            {
+              description: msg`Archived on`,
+              value: DateTime.fromJSDate(document.archivedAt)
+                .setLocale(i18n.locales?.[0] || i18n.locale)
+                .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS),
+            },
+          ]
+        : []
+    ),
     {
       description: msg`Time zone`,
       value: document.documentMeta?.timezone ?? 'N/A',

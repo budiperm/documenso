@@ -163,6 +163,7 @@ export default function DocumentPage() {
               documentData={documentData}
               contentArchived={document.contentArchived}
               archivedAt={document.archivedAt}
+              auditLogsHref={`${documentRootPath}/${document.id}/logs`}
             />
           </CardContent>
         </Card>

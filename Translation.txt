@@ -535,36 +535,13 @@ msgstr "404 not found"
 #: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.groups.$id.tsx
 #, fuzzy
 msgid "404 Organisation group not found"
-msgstr "404 Grup organisasi tidak ditemukan"
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.groups.$id.tsx
-#, fuzzy
-msgid ""
-"The organisation group you are looking for may have been removed, renamed or may have never\n"
-"                    existed."
-msgstr ""
-"Grup organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                    ada."
-
-#: apps/remix/app/routes/_authenticated+/o.$orgUrl.settings.groups.$id.tsx
-#, fuzzy
-msgid "The organisation role that will be applied to all members in this group."
-msgstr "Peran organisasi yang akan diterapkan ke semua anggota dalam grup ini."
+msgstr "404 Organisation group not found"
 
 #: apps/remix/app/routes/_authenticated+/_layout.tsx
 #: apps/remix/app/routes/_authenticated+/admin+/organisations.$id.tsx
 #, fuzzy
 msgid "404 Organisation not found"
-msgstr "404 Organisasi tidak ditemukan"
-
-#: apps/remix/app/routes/_authenticated+/admin+/organisations.$id.tsx
-#, fuzzy
-msgid ""
-"The organisation you are looking for may have been removed, renamed or may have never\n"
-"                    existed."
-msgstr ""
-"Organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                    ada."
+msgstr "404 Organisation not found"
 
 #: apps/remix/app/routes/_profile+/_layout.tsx
 #, fuzzy
@@ -575,16 +552,7 @@ msgstr "404 Profile not found"
 #: apps/remix/app/routes/_authenticated+/t.$teamUrl+/_layout.tsx
 #, fuzzy
 msgid "404 Team not found"
-msgstr "404 Tim tidak ditemukan"
-
-#: apps/remix/app/routes/_authenticated+/_layout.tsx
-#, fuzzy
-msgid ""
-"The organisation you are looking for may have been removed, renamed or may have never\n"
-"                  existed."
-msgstr ""
-"Organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                  ada."
+msgstr "404 Team not found"
 
 #: apps/remix/app/routes/_authenticated+/admin+/users.$id.tsx
 #, fuzzy
@@ -735,12 +703,7 @@ msgstr "A stable internet connection"
 #: packages/email/templates/team-delete.tsx
 #, fuzzy
 msgid "A team you were a part of has been deleted"
-msgstr "Sebuah tim yang Anda ikuti telah dihapus"
-
-#: packages/email/templates/team-delete.tsx
-#, fuzzy
-msgid "The following team has been deleted. You will no longer be able to access this team and its documents"
-msgstr "Tim berikut telah dihapus. Anda tidak lagi dapat mengakses tim ini dan dokumen-dokumennya"
+msgstr "A team you were a part of has been deleted"
 
 #: apps/remix/app/components/forms/public-profile-form.tsx
 #, fuzzy
@@ -1796,12 +1759,7 @@ msgstr "Bulk Send Complete: {0}"
 #: packages/email/templates/bulk-send-complete.tsx
 #, fuzzy
 msgid "Bulk send operation complete for template \"{templateName}\""
-msgstr "Operasi pengiriman massal selesai untuk template \"{templateName}\""
-
-#: packages/email/templates/bulk-send-complete.tsx
-#, fuzzy
-msgid "The following errors occurred:"
-msgstr "Kesalahan berikut terjadi:"
+msgstr "Bulk send operation complete for template \"{templateName}\""
 
 #: apps/remix/app/components/dialogs/template-bulk-send-dialog.tsx
 #, fuzzy
@@ -2271,22 +2229,12 @@ msgstr "Configure general settings for the template."
 #: apps/remix/app/components/dialogs/public-profile-template-manage-dialog.tsx
 #, fuzzy
 msgid "Configure template"
-msgstr "Konfigurasi template"
-
-#: apps/remix/app/components/dialogs/public-profile-template-manage-dialog.tsx
-#, fuzzy
-msgid "The public description that will be displayed with this template"
-msgstr "Deskripsi publik yang akan ditampilkan bersama template ini"
-
-#: apps/remix/app/components/dialogs/public-profile-template-manage-dialog.tsx
-#, fuzzy
-msgid "The public name for your template"
-msgstr "Nama publik untuk template Anda"
+msgstr "Configure template"
 
 #: apps/remix/app/components/embed/authoring/configure-document-view.tsx
 #, fuzzy
 msgid "Configure Template"
-msgstr "Konfigurasi Template"
+msgstr "Configure Template"
 
 #. placeholder {0}: parseMessageDescriptor( _, FRIENDLY_FIELD_TYPE[currentField.type], )
 #: apps/remix/app/components/embed/authoring/field-advanced-settings-drawer.tsx
@@ -2670,17 +2618,12 @@ msgstr "Create New Folder"
 #: apps/remix/app/routes/_profile+/_layout.tsx
 #, fuzzy
 msgid "Create now"
-msgstr "Buat sekarang"
-
-#: apps/remix/app/routes/_profile+/_layout.tsx
-#, fuzzy
-msgid "The profile you are looking for could not be found."
-msgstr "Profil yang Anda cari tidak dapat ditemukan."
+msgstr "Create now"
 
 #: apps/remix/app/components/dialogs/template-direct-link-dialog.tsx
 #, fuzzy
 msgid "Create one automatically"
-msgstr "Buat secara otomatis"
+msgstr "Create one automatically"
 
 #: apps/remix/app/routes/_authenticated+/dashboard.tsx
 #: apps/remix/app/components/dialogs/organisation-create-dialog.tsx
@@ -3358,12 +3301,7 @@ msgstr "Document is already uploaded"
 #: apps/remix/app/components/general/legacy-field-warning-popover.tsx
 #, fuzzy
 msgid "Document is using legacy field insertion"
-msgstr "Dokumen menggunakan metode penyisipan kolom lama"
-
-#: apps/remix/app/components/general/legacy-field-warning-popover.tsx
-#, fuzzy
-msgid "The fields have been updated to the new field insertion method successfully"
-msgstr "Kolom telah berhasil diperbarui ke metode penyisipan kolom yang baru"
+msgstr "Document is using legacy field insertion"
 
 #: apps/remix/app/components/tables/templates-table.tsx
 #, fuzzy
@@ -7883,23 +7821,24 @@ msgid "The fields have been updated to the new field insertion method successful
 msgstr "The fields have been updated to the new field insertion method successfully"
 
 #: apps/remix/app/components/dialogs/folder-delete-dialog.tsx
+#, fuzzy
 msgid "The folder you are trying to delete does not exist."
-msgstr "Folder yang ingin Anda hapus tidak ada."
+msgstr "The folder you are trying to delete does not exist."
 
 #: apps/remix/app/components/dialogs/folder-move-dialog.tsx
 #, fuzzy
 msgid "The folder you are trying to move does not exist."
-msgstr "Folder yang ingin Anda pindahkan tidak ada."
+msgstr "The folder you are trying to move does not exist."
 
 #: apps/remix/app/components/dialogs/document-move-to-folder-dialog.tsx
 #, fuzzy
 msgid "The folder you are trying to move the document to does not exist."
-msgstr "Folder tujuan pemindahan dokumen tidak ada."
+msgstr "The folder you are trying to move the document to does not exist."
 
 #: apps/remix/app/components/dialogs/template-move-to-folder-dialog.tsx
 #, fuzzy
 msgid "The folder you are trying to move the template to does not exist."
-msgstr "Folder tujuan pemindahan template tidak ada."
+msgstr "The folder you are trying to move the template to does not exist."
 
 #: packages/email/templates/bulk-send-complete.tsx
 #, fuzzy
@@ -7917,8 +7856,6 @@ msgid ""
 "The organisation group you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 msgstr ""
-"Grup organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                    ada."
 "The organisation group you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 
@@ -7933,8 +7870,6 @@ msgid ""
 "The organisation you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 msgstr ""
-"Organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                    ada."
 "The organisation you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 
@@ -7944,8 +7879,6 @@ msgid ""
 "The organisation you are looking for may have been removed, renamed or may have never\n"
 "                  existed."
 msgstr ""
-"Organisasi yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                  ada."
 "The organisation you are looking for may have been removed, renamed or may have never\n"
 "                  existed."
 
@@ -8053,8 +7986,6 @@ msgid ""
 "The team you are looking for may have been removed, renamed or may have never\n"
 "                  existed."
 msgstr ""
-"Tim yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                  ada."
 "The team you are looking for may have been removed, renamed or may have never\n"
 "                  existed."
 
@@ -8064,8 +7995,6 @@ msgid ""
 "The team you are looking for may have been removed, renamed or may have never\n"
 "                existed."
 msgstr ""
-"Tim yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                ada."
 "The team you are looking for may have been removed, renamed or may have never\n"
 "                existed."
 
@@ -8116,8 +8045,6 @@ msgid ""
 "The user you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 msgstr ""
-"Pengguna yang Anda cari mungkin telah dihapus, diubah namanya, atau mungkin tidak pernah\n"
-"                    ada."
 "The user you are looking for may have been removed, renamed or may have never\n"
 "                    existed."
 

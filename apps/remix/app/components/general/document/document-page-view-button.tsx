@@ -36,12 +36,17 @@ export const DocumentPageViewButton = ({ document }: DocumentPageViewButtonProps
   const isComplete = isDocumentCompleted(document);
   const isSigned = recipient?.signingStatus === SigningStatus.SIGNED;
   const role = recipient?.role;
+  const isContentArchived = Boolean((document as any).contentArchived);
 
   const documentsPath = formatDocumentsPath(document.team.url);
   const formatPath = `${documentsPath}/${document.id}/edit`;
 
   const onDownloadClick = async () => {
     try {
+      if (isContentArchived) {
+        // Safety: do nothing if archived (button will be disabled anyway)
+        return;
+      }
       const documentWithData = await trpcClient.document.getDocumentById.query(
         {
           documentId: document.id,
@@ -108,7 +113,7 @@ export const DocumentPageViewButton = ({ document }: DocumentPageViewButtonProps
       </Button>
     ))
     .with({ isComplete: true }, () => (
-      <Button className="w-full" onClick={onDownloadClick}>
+      <Button className="w-full" onClick={onDownloadClick} disabled={isContentArchived}>
         <Download className="-ml-1 mr-2 inline h-4 w-4" />
         <Trans>Download</Trans>
       </Button>

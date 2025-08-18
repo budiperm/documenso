@@ -16,6 +16,7 @@ import { Link, useLocation } from 'react-router';
 import { authClient } from '@documenso/auth/client';
 import { useOptionalCurrentOrganisation } from '@documenso/lib/client-only/providers/organisation';
 import { useSession } from '@documenso/lib/client-only/providers/session';
+import { NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN } from '@documenso/lib/constants/app';
 import { EXTENDED_ORGANISATION_MEMBER_ROLE_MAP } from '@documenso/lib/constants/organisations-translations';
 import { EXTENDED_TEAM_MEMBER_ROLE_MAP } from '@documenso/lib/constants/teams-translations';
 import { formatAvatarUrl } from '@documenso/lib/utils/avatars';
@@ -49,6 +50,8 @@ export const OrgMenuSwitcher = () => {
   const [hoveredOrgId, setHoveredOrgId] = useState<string | null>(null);
 
   const isUserAdmin = isAdmin(user);
+  const canCreateOrganisation = !NEXT_PRIVATE_RESTRICT_ORGANISATION_CREATION_TO_ADMIN() || 
+    (user?.roles && user.roles.includes('ADMIN'));
 
   const isPathOrgUrl = (orgUrl: string) => {
     if (!pathname || !pathname.startsWith(`/o/`)) {
@@ -195,12 +198,14 @@ export const OrgMenuSwitcher = () => {
                 </div>
               ))}
 
-              <Button variant="ghost" className="w-full justify-start" asChild>
-                <Link to="/settings/organisations?action=add-organisation">
-                  <Plus className="mr-2 h-4 w-4" />
-                  <Trans>Create Organisation</Trans>
-                </Link>
-              </Button>
+              {canCreateOrganisation && (
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/settings/organisations?action=add-organisation">
+                    <Plus className="mr-2 h-4 w-4" />
+                    <Trans>Create Organisation</Trans>
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
 

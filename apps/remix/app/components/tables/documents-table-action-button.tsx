@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
 import { DocumentStatus, RecipientRole, SigningStatus } from '@prisma/client';
-import { CheckCircle, Download, Edit, EyeIcon, Pencil } from 'lucide-react';
+import { CheckCircle, Download, Edit, EyeIcon, Pencil, ScrollTextIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { match } from 'ts-pattern';
 
@@ -131,11 +131,20 @@ export const DocumentsTableActionButton = ({ row }: DocumentsTableActionButtonPr
         <Trans>View</Trans>
       </Button>
     ))
-    .with({ isComplete: true }, () => (
-      <Button className="w-32" onClick={onDownloadClick} disabled={row.contentArchived}>
-        <Download className="-ml-1 mr-2 inline h-4 w-4" />
-        <Trans>Download</Trans>
-      </Button>
-    ))
+    .with({ isComplete: true }, () =>
+      row.contentArchived ? (
+        <Button className="w-32" asChild>
+          <Link to={`${documentsPath}/${row.id}/logs`}>
+            <ScrollTextIcon className="-ml-1 mr-2 inline h-4 w-4" />
+            <Trans>Audit Log</Trans>
+          </Link>
+        </Button>
+      ) : (
+        <Button className="w-32" onClick={onDownloadClick}>
+          <Download className="-ml-1 mr-2 inline h-4 w-4" />
+          <Trans>Download</Trans>
+        </Button>
+      ),
+    )
     .otherwise(() => <div></div>);
 };
