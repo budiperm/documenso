@@ -38,7 +38,7 @@ export const TemplateFooter = ({ isDocument = true }: TemplateFooterProps) => {
           })}
         </Text>
       ) : (
-                <Text className="text-slate-400" style={text}>
+        <Text className="my-8 text-sm text-slate-400">
           {appName}, Inc.
         </Text>
       )}
