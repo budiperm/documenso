@@ -1,6 +1,6 @@
 import {
   DocumentSource,
-  DocumentVisibility,
+  type DocumentVisibility,
   FieldType,
   RecipientRole,
   SendStatus,
@@ -100,12 +100,18 @@ export const createDocument = async ({
     if (documentData) {
       const buffer = await getFileServerSide(documentData);
 
-      const normalizedPdf = await makeNormalizedPdf(Buffer.from(buffer));
+  const normalizedPdf = await makeNormalizedPdf(Buffer.from(buffer));
 
       const newDocumentData = await putPdfFileServerSide({
         name: title.endsWith('.pdf') ? title : `${title}.pdf`,
         type: 'application/pdf',
-        arrayBuffer: async () => Promise.resolve(normalizedPdf),
+        arrayBuffer: async () =>
+          Promise.resolve(
+            normalizedPdf.buffer.slice(
+              normalizedPdf.byteOffset,
+              normalizedPdf.byteOffset + normalizedPdf.byteLength,
+            ) as ArrayBuffer,
+          ),
       });
 
       // eslint-disable-next-line require-atomic-updates
@@ -155,17 +161,17 @@ export const createDocument = async ({
     });
 
     // If self-signing, create a recipient for the current user
-    if (selfSign) {
+  if (selfSign) {
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { name: true, email: true },
+    select: { name: true, email: true },
       });
 
       if (!user) {
         throw new Error('User not found');
       }
 
-      const createdRecipient = await tx.recipient.create({
+  const createdRecipient = await tx.recipient.create({
         data: {
           documentId: document.id,
           name: user.name || '',
@@ -175,36 +181,41 @@ export const createDocument = async ({
           token: nanoid(),
           sendStatus: SendStatus.NOT_SENT, // No email needed for self-signing
           signingStatus: SigningStatus.NOT_SIGNED,
-          authOptions: null, // No authentication needed for self-signing
+          authOptions: {
+            accessAuth: ['ACCOUNT'],
+    actionAuth: ['ACCOUNT'],
+          },
         },
       });
 
       // Add a default signature field for self-signing
-      await tx.field.create({
+    await tx.field.create({
         data: {
           documentId: document.id,
           recipientId: createdRecipient.id,
           type: FieldType.SIGNATURE,
-          pageNumber: 1,
-          pageX: 100, // Default position
-          pageY: 100,
-          pageWidth: 200,
-          pageHeight: 60,
+      page: 1,
+      positionX: 100,
+      positionY: 100,
+      width: 200,
+      height: 60,
           customText: '',
           inserted: false,
         },
       });
 
-      await tx.documentAuditLog.create({
+  await tx.documentAuditLog.create({
         data: createDocumentAuditLogData({
           type: DOCUMENT_AUDIT_LOG_TYPE.RECIPIENT_CREATED,
           documentId: document.id,
           metadata: requestMetadata,
           data: {
-            recipientId: String(createdRecipient.id),
+            recipientId: createdRecipient.id,
             recipientName: user.name || '',
             recipientEmail: user.email,
-            recipientRole: RecipientRole.SIGNER,
+    recipientRole: RecipientRole.SIGNER,
+    accessAuth: ['ACCOUNT'],
+    actionAuth: ['ACCOUNT'],
           },
         }),
       });
@@ -224,7 +235,7 @@ export const createDocument = async ({
       throw new Error('Document not found');
     }
 
-    await triggerWebhook({
+  await triggerWebhook({
       event: WebhookTriggerEvents.DOCUMENT_CREATED,
       data: ZWebhookDocumentSchema.parse(mapDocumentToWebhookDocumentPayload(createdDocument)),
       userId,

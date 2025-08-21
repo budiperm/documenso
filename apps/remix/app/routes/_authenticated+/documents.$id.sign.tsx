@@ -1,129 +1,89 @@
-import { useLingui } from '@lingui/react';
-import { Trans } from '@lingui/react/macro';
-import { DocumentStatus, RecipientRole, SigningStatus } from '@prisma/client';
-import { ChevronLeft } from 'lucide-react';
-import { Link, redirect } from 'react-router';
+import { redirect } from 'react-router';
 
 import { getSession } from '@documenso/auth/server/lib/utils/get-session';
-import { useSession } from '@documenso/lib/client-only/providers/session';
 import { getDocumentWithDetailsById } from '@documenso/lib/server-only/document/get-document-with-details-by-id';
-import { Badge } from '@documenso/ui/primitives/badge';
 
 import { DocumentSigningPageView } from '~/components/general/document-signing/document-signing-page-view';
 import { DocumentSigningProvider } from '~/components/general/document-signing/document-signing-provider';
 import { superLoaderJson, useSuperLoaderData } from '~/utils/super-json-loader';
+import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
 
-import type { Route } from './+types/documents.$id.sign';
-
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ params, request }: { params: any; request: Request }) {
   const { user } = await getSession(request);
-
   const { id } = params;
-
   const documentId = Number(id);
-
   const documentRootPath = '/documents';
 
   if (Number.isNaN(documentId)) {
-    return redirect(documentRootPath);
+    throw redirect(documentRootPath);
   }
 
-  const document = await getDocumentWithDetailsById({
-    userId: user.id,
-    teamId: undefined,
-    documentId,
-  });
+  try {
+    const document = await getDocumentWithDetailsById({
+      userId: user.id,
+      teamId: 0,
+      documentId,
+    });
 
-  if (!document) {
-    return redirect(documentRootPath);
-  }
+    if (!document) {
+      throw redirect(documentRootPath);
+    }
 
-  // Check if this is a self-signing document
-  const selfSigningRecipient = document.recipients.find(
-    (recipient) => recipient.email === user.email && recipient.role === RecipientRole.SIGNER,
-  );
+    // Find the self-signing recipient (current user)
+    const selfSigningRecipient = document.recipients.find(
+      (recipient: any) => recipient.email === user.email && recipient.role === 'SIGNER',
+    );
 
-  if (!selfSigningRecipient) {
-    // Redirect to view page if not a self-signing document
-    return redirect(`${documentRootPath}/${documentId}`);
-  }
+    if (!selfSigningRecipient) {
+      throw redirect(`${documentRootPath}/${documentId}`);
+    }
 
-  // Check if already signed
-  if (selfSigningRecipient.signingStatus === SigningStatus.SIGNED) {
-    return redirect(`${documentRootPath}/${documentId}`);
-  }
+    // Get fields for this recipient
+    const recipientFields = document.fields.filter(
+      (field: any) => field.recipientId === selfSigningRecipient.id,
+    );
 
-  // Get fields for this recipient
-  const fields = document.fields.filter((field) => field.recipientId === selfSigningRecipient.id);
-  const completedFields = document.fields.filter(
-    (field) => field.recipientId === selfSigningRecipient.id && field.inserted,
-  );
+    const completedFields = document.fields.filter((f: any) => f.inserted);
 
   return superLoaderJson({
-    document,
-    recipient: selfSigningRecipient,
-    fields,
-    completedFields,
-    documentRootPath,
-  });
+      document,
+      recipient: selfSigningRecipient,
+      fields: recipientFields,
+      completedFields,
+      documentRootPath,
+      isRecipientsTurn: true,
+      includeSenderDetails: false,
+    });
+  } catch {
+    throw redirect(documentRootPath);
+  }
 }
 
-export default function DocumentSelfSignPage() {
-  const { _ } = useLingui();
-  const { user } = useSession();
-  const { document, recipient, fields, completedFields, documentRootPath } =
+export default function DocumentSigningPage() {
+  const { document, recipient, fields, completedFields, documentRootPath, isRecipientsTurn, includeSenderDetails } =
     useSuperLoaderData<typeof loader>();
+  const { sessionData } = useOptionalSession();
+  const user = sessionData?.user;
 
-  if (!user) {
-    return null;
-  }
+  const recipientWithFields = { ...recipient, fields } as const;
 
   return (
-    <div className="mx-auto max-w-screen-xl px-4 md:px-8">
-      <Link
-        to={documentRootPath}
-        className="text-muted-foreground hover:text-foreground mb-8 flex items-center text-sm"
-      >
-        <ChevronLeft className="mr-2 h-5 w-5" />
-        <Trans>Back to Documents</Trans>
-      </Link>
-
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold md:text-3xl" title={document.title}>
-            {document.title}
-          </h1>
-
-          <p className="text-muted-foreground mt-2.5 text-sm">
-            <Trans>Sign this document</Trans>
-          </p>
-        </div>
-
-        <div className="flex items-center gap-x-4">
-          <Badge variant="neutral">
-            <Trans>Self-Signing Document</Trans>
-          </Badge>
-        </div>
-      </div>
-
-      <DocumentSigningProvider 
-        document={document} 
-        recipient={recipient} 
-        token={recipient.token}
-        email={user.email}
-        fullName={user.name || ''}
-        signature=""
-        redirectUrl=""
-      >
-        <DocumentSigningPageView
-          recipient={recipient}
-          document={document}
-          fields={fields}
-          completedFields={completedFields}
-          isRecipientsTurn={true}
-          includeSenderDetails={false}
-        />
-      </DocumentSigningProvider>
-    </div>
+    <DocumentSigningProvider
+      email={recipient.email}
+      fullName={user?.email === recipient.email ? user?.name : recipient.name}
+      signature={user?.email === recipient.email ? user?.signature : undefined}
+      typedSignatureEnabled={document.documentMeta?.typedSignatureEnabled}
+      uploadSignatureEnabled={document.documentMeta?.uploadSignatureEnabled}
+      drawSignatureEnabled={document.documentMeta?.drawSignatureEnabled}
+    >
+      <DocumentSigningPageView
+        document={document as any}
+        recipient={recipientWithFields as any}
+        fields={fields}
+        completedFields={completedFields}
+        isRecipientsTurn={isRecipientsTurn}
+        includeSenderDetails={includeSenderDetails}
+      />
+    </DocumentSigningProvider>
   );
 }
