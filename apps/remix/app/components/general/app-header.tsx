@@ -1,14 +1,14 @@
 import { type HTMLAttributes, useEffect, useState } from 'react';
 
-import { ReadStatus } from '@prisma/client';
 import { InboxIcon, MenuIcon, SearchIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 
 import { useSession } from '@documenso/lib/client-only/providers/session';
 import { isPersonalLayout } from '@documenso/lib/utils/organisations';
 import { getRootHref } from '@documenso/lib/utils/params';
-import { trpc } from '@documenso/trpc/react';
 import { cn } from '@documenso/ui/lib/utils';
+import { trpc } from '@documenso/trpc/react';
+import { ReadStatus } from '@prisma/client';
 import { Button } from '@documenso/ui/primitives/button';
 
 import { BrandingLogo } from '~/components/general/branding-logo';
