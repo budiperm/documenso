@@ -30,6 +30,11 @@ export type SendDocumentOptions = {
   userId: number;
   teamId: number;
   sendEmail?: boolean;
+  /**
+   * If true, will not trigger DOCUMENT_SENT webhooks when transitioning the document to PENDING.
+   * Useful for self-sign flows where external notifications are not desired.
+   */
+  suppressWebhooks?: boolean;
   requestMetadata: ApiRequestMetadata;
 };
 
@@ -38,6 +43,7 @@ export const sendDocument = async ({
   userId,
   teamId,
   sendEmail,
+  suppressWebhooks,
   requestMetadata,
 }: SendDocumentOptions) => {
   const { documentWhereInput } = await getDocumentWhereInput({
@@ -108,7 +114,11 @@ export const sendDocument = async ({
     const newDocumentData = await putPdfFileServerSide({
       name: fileName,
       type: 'application/pdf',
-      arrayBuffer: async () => Promise.resolve(prefilled),
+      arrayBuffer: async (): Promise<ArrayBuffer> => {
+        const buf = prefilled; // Node Buffer
+        const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+        return ab as ArrayBuffer;
+      },
     });
 
     const result = await prisma.document.update({
@@ -227,12 +237,14 @@ export const sendDocument = async ({
     });
   });
 
-  await triggerWebhook({
-    event: WebhookTriggerEvents.DOCUMENT_SENT,
-    data: ZWebhookDocumentSchema.parse(mapDocumentToWebhookDocumentPayload(updatedDocument)),
-    userId,
-    teamId,
-  });
+  if (!suppressWebhooks) {
+    await triggerWebhook({
+      event: WebhookTriggerEvents.DOCUMENT_SENT,
+      data: ZWebhookDocumentSchema.parse(mapDocumentToWebhookDocumentPayload(updatedDocument)),
+      userId,
+      teamId,
+    });
+  }
 
   return updatedDocument;
 };

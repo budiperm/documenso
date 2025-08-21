@@ -127,7 +127,7 @@ export const DocumentUploadDropzone = ({ className }: DocumentUploadDropzoneProp
 
       const response = await putPdfFile(file);
 
-      const { id } = await createDocument({
+      const created = await createDocument({
         title: file.name,
         documentDataId: response.id,
         timezone: userTimezone,
@@ -135,10 +135,21 @@ export const DocumentUploadDropzone = ({ className }: DocumentUploadDropzoneProp
         selfSign: true, // Flag to indicate this is self-signing
       });
 
+      const id = created.id as number;
+      // Prefer navigating with the recipient token which uses the existing /sign/:token flow
+      const recipientToken = Array.isArray((created as any).recipients)
+        ? (created as any).recipients[0]?.token
+        : undefined;
+
       void refreshLimits();
 
-      // Navigate directly to signing page instead of edit page
-      await navigate(`${formatDocumentsPath(team.url)}/${id}/sign`);
+      // Navigate directly to the signing page. Use /sign/:token when available.
+      if (recipientToken) {
+        await navigate(`/sign/${recipientToken}`);
+      } else {
+        // Fallback to non team-scoped route
+        await navigate(`/documents/${id}/sign`);
+      }
 
       toast({
         title: _(msg`Document uploaded for self-signing`),

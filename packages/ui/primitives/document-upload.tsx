@@ -110,46 +110,7 @@ export const DocumentDropzone = ({
     );
   }
 
-  // Show both options
-  if (showSelfSignOption && onDrop && onSelfSign) {
-    return (
-      <div className="flex flex-col gap-2">
-        <Button loading={loading} aria-disabled={disabled} {...getRootProps()} {...props}>
-          <div className="flex items-center gap-2">
-            <input {...getInputProps()} />
-            {!loading && <Upload className="h-4 w-4" />}
-            {disabled ? _(disabledMessage) : _(heading[type])}
-          </div>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          loading={loading} 
-          aria-disabled={disabled} 
-          onClick={() => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.pdf';
-            input.onchange = (e) => {
-              const file = (e.target as HTMLInputElement).files?.[0];
-              if (file && onSelfSign) {
-                void onSelfSign(file);
-              }
-            };
-            input.click();
-          }}
-          {...props}
-        >
-          <div className="flex items-center gap-2">
-            {!loading && <Upload className="h-4 w-4" />}
-            <Trans>Upload & Sign for Myself</Trans>
-          </div>
-        </Button>
-      </div>
-    );
-  }
-
-  // Default single upload button
+  // Default single upload button (hide "Upload & Sign for Myself" button)
   return (
     <Button loading={loading} aria-disabled={disabled} {...getRootProps()} {...props}>
       <div className="flex items-center gap-2">

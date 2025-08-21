@@ -6,6 +6,7 @@ import { getTeamByUrl } from '@documenso/lib/server-only/team/get-team';
 import { formatDocumentsPath } from '@documenso/lib/utils/teams';
 
 import { DocumentSigningPageView } from '~/components/general/document-signing/document-signing-page-view';
+import { DocumentSigningAuthProvider } from '~/components/general/document-signing/document-signing-auth-provider';
 import { DocumentSigningProvider } from '~/components/general/document-signing/document-signing-provider';
 import { superLoaderJson, useSuperLoaderData } from '~/utils/super-json-loader';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
@@ -80,14 +81,20 @@ export default function TeamDocumentSigningPage() {
       uploadSignatureEnabled={document.documentMeta?.uploadSignatureEnabled}
       drawSignatureEnabled={document.documentMeta?.drawSignatureEnabled}
     >
-      <DocumentSigningPageView
-        document={document as any}
-        recipient={recipientWithFields as any}
-        fields={fields}
-        completedFields={completedFields}
-        isRecipientsTurn={isRecipientsTurn}
-        includeSenderDetails={includeSenderDetails}
-      />
+      <DocumentSigningAuthProvider
+        documentAuthOptions={document.authOptions}
+        recipient={recipient as any}
+        user={user}
+      >
+        <DocumentSigningPageView
+          document={document as any}
+          recipient={recipientWithFields as any}
+          fields={fields}
+          completedFields={completedFields}
+          isRecipientsTurn={isRecipientsTurn}
+          includeSenderDetails={includeSenderDetails}
+        />
+      </DocumentSigningAuthProvider>
     </DocumentSigningProvider>
   );
 }

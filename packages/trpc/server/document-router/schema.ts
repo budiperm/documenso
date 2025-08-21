@@ -286,6 +286,11 @@ export type TSetFieldsForDocumentMutationSchema = z.infer<
 
 export const ZDistributeDocumentRequestSchema = z.object({
   documentId: z.number().describe('The ID of the document to send.'),
+  // When provided, overrides default email sending behavior for distribution.
+  // If true, always send emails. If false, never send emails. If undefined, use document settings.
+  sendEmail: z.boolean().optional(),
+  // If true, suppress DOCUMENT_SENT webhooks during transition to PENDING.
+  suppressWebhooks: z.boolean().optional(),
   meta: z
     .object({
       subject: ZDocumentMetaSubjectSchema.optional(),

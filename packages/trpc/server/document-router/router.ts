@@ -460,7 +460,7 @@ export const documentRouter = router({
     .output(ZDistributeDocumentResponseSchema)
     .mutation(async ({ input, ctx }) => {
       const { teamId } = ctx;
-      const { documentId, meta = {} } = input;
+  const { documentId, sendEmail, suppressWebhooks, meta = {} } = input;
 
       ctx.logger.info({
         input: {
@@ -491,6 +491,8 @@ export const documentRouter = router({
         userId: ctx.user.id,
         documentId,
         teamId,
+        sendEmail,
+        suppressWebhooks,
         requestMetadata: ctx.metadata,
       });
     }),

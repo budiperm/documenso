@@ -4,6 +4,7 @@ import { getSession } from '@documenso/auth/server/lib/utils/get-session';
 import { getDocumentWithDetailsById } from '@documenso/lib/server-only/document/get-document-with-details-by-id';
 
 import { DocumentSigningPageView } from '~/components/general/document-signing/document-signing-page-view';
+import { DocumentSigningAuthProvider } from '~/components/general/document-signing/document-signing-auth-provider';
 import { DocumentSigningProvider } from '~/components/general/document-signing/document-signing-provider';
 import { superLoaderJson, useSuperLoaderData } from '~/utils/super-json-loader';
 import { useOptionalSession } from '@documenso/lib/client-only/providers/session';
@@ -76,14 +77,20 @@ export default function DocumentSigningPage() {
       uploadSignatureEnabled={document.documentMeta?.uploadSignatureEnabled}
       drawSignatureEnabled={document.documentMeta?.drawSignatureEnabled}
     >
-      <DocumentSigningPageView
-        document={document as any}
-        recipient={recipientWithFields as any}
-        fields={fields}
-        completedFields={completedFields}
-        isRecipientsTurn={isRecipientsTurn}
-        includeSenderDetails={includeSenderDetails}
-      />
+      <DocumentSigningAuthProvider
+        documentAuthOptions={document.authOptions}
+        recipient={recipient as any}
+        user={user}
+      >
+        <DocumentSigningPageView
+          document={document as any}
+          recipient={recipientWithFields as any}
+          fields={fields}
+          completedFields={completedFields}
+          isRecipientsTurn={isRecipientsTurn}
+          includeSenderDetails={includeSenderDetails}
+        />
+      </DocumentSigningAuthProvider>
     </DocumentSigningProvider>
   );
 }

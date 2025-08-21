@@ -30,8 +30,10 @@ import type { DocumentFlowStep } from '@documenso/ui/primitives/document-flow/ty
 import { PDFViewer } from '@documenso/ui/primitives/pdf-viewer';
 import { Stepper } from '@documenso/ui/primitives/stepper';
 import { useToast } from '@documenso/ui/primitives/use-toast';
+import { Button } from '@documenso/ui/primitives/button';
 
 import { useCurrentTeam } from '~/providers/team';
+import { useSession } from '@documenso/lib/client-only/providers/session';
 
 export type DocumentEditFormProps = {
   className?: string;
@@ -51,6 +53,7 @@ export const DocumentEditForm = ({
   const { _ } = useLingui();
 
   const navigate = useNavigate();
+  const { user } = useSession();
 
   const [searchParams] = useSearchParams();
   const team = useCurrentTeam();
@@ -173,6 +176,51 @@ export const DocumentEditForm = ({
     return initialStep;
   });
 
+  // Track if the user chose to self-sign so we can alter post-fields behavior
+  const [isSelfSignMode, setIsSelfSignMode] = useState(false);
+
+  const onSkipToFieldsSelfSign = async () => {
+    try {
+      if (!user?.email) {
+        toast({
+          title: _(msg`Error`),
+          description: _(msg`You must be signed in with a verified email to self-sign.`),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Replace recipients with the current user as the sole signer
+      await setRecipients({
+        documentId: document.id,
+        recipients: [
+          {
+            name: user.name || '',
+            email: user.email,
+            role: 'SIGNER',
+            signingOrder: 1,
+            actionAuth: [],
+          },
+        ],
+      });
+
+      setIsSelfSignMode(true);
+      setStep('fields');
+
+      toast({
+        title: _(msg`Self sign enabled`),
+        description: _(msg`You can now place your signature fields.`),
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: _(msg`Error`),
+        description: _(msg`Could not enable self sign.`),
+        variant: 'destructive',
+      });
+    }
+  };
+
   const onAddSettingsFormSubmit = async (data: TAddSettingsFormSchema) => {
     try {
       const { timezone, dateFormat, redirectUrl, language, signatureTypes } = data.meta;
@@ -265,6 +313,25 @@ export const DocumentEditForm = ({
         }
       }
 
+      if (isSelfSignMode) {
+        // Move document to PENDING without emails so signing mutations are allowed
+        try {
+          await sendDocument({
+            documentId: document.id,
+            sendEmail: false,
+            suppressWebhooks: true,
+          });
+        } catch (e) {
+          console.error('Failed to transition to PENDING for self-sign', e);
+          // Continue anyway; the signing route will surface any issues
+        }
+
+        // Jump straight to signing view for the sole recipient (current user)
+        // Use team-scoped documents path to ensure loader has a valid team context
+        await navigate(`${documentRootPath}/${document.id}/sign`);
+        return;
+      }
+
       setStep('subject');
     } catch (err) {
       console.error(err);
@@ -350,6 +417,13 @@ export const DocumentEditForm = ({
       </Card>
 
       <div className="col-span-12 lg:col-span-6 xl:col-span-5">
+        {step === 'settings' && (
+          <div className="mb-3 flex w-full items-center justify-end">
+            <Button size="sm" variant="outline" onClick={() => void onSkipToFieldsSelfSign()}>
+              {_(msg`Sign Document Myself`)}
+            </Button>
+          </div>
+        )}
         <DocumentFlowFormContainer
           className="lg:h-[calc(100vh-6rem)]"
           onSubmit={(e) => e.preventDefault()}
