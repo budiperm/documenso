@@ -1,5 +1,12 @@
-import { DocumentSource, WebhookTriggerEvents } from '@prisma/client';
-import type { DocumentVisibility } from '@prisma/client';
+import {
+  DocumentSource,
+  DocumentVisibility,
+  FieldType,
+  RecipientRole,
+  SendStatus,
+  SigningStatus,
+  WebhookTriggerEvents,
+} from '@prisma/client';
 
 import { normalizePdf as makeNormalizedPdf } from '@documenso/lib/server-only/pdf/normalize-pdf';
 import { DOCUMENT_AUDIT_LOG_TYPE } from '@documenso/lib/types/document-audit-logs';
@@ -12,7 +19,7 @@ import {
   ZWebhookDocumentSchema,
   mapDocumentToWebhookDocumentPayload,
 } from '../../types/webhook-payload';
-import { prefixedId } from '../../universal/id';
+import { prefixedId, nanoid } from '../../universal/id';
 import { getFileServerSide } from '../../universal/upload/get-file.server';
 import { putPdfFileServerSide } from '../../universal/upload/put-file.server';
 import { extractDerivedDocumentMeta } from '../../utils/document';
@@ -34,6 +41,7 @@ export type CreateDocumentOptions = {
   userTimezone?: string;
   requestMetadata: ApiRequestMetadata;
   folderId?: string;
+  selfSign?: boolean;
 };
 
 export const createDocument = async ({
@@ -48,6 +56,7 @@ export const createDocument = async ({
   timezone,
   userTimezone,
   folderId,
+  selfSign = false,
 }: CreateDocumentOptions) => {
   const team = await getTeamById({ userId, teamId });
 
@@ -144,6 +153,62 @@ export const createDocument = async ({
         },
       }),
     });
+
+    // If self-signing, create a recipient for the current user
+    if (selfSign) {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true },
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const createdRecipient = await tx.recipient.create({
+        data: {
+          documentId: document.id,
+          name: user.name || '',
+          email: user.email,
+          role: RecipientRole.SIGNER,
+          signingOrder: 1,
+          token: nanoid(),
+          sendStatus: SendStatus.NOT_SENT, // No email needed for self-signing
+          signingStatus: SigningStatus.NOT_SIGNED,
+          authOptions: null, // No authentication needed for self-signing
+        },
+      });
+
+      // Add a default signature field for self-signing
+      await tx.field.create({
+        data: {
+          documentId: document.id,
+          recipientId: createdRecipient.id,
+          type: FieldType.SIGNATURE,
+          pageNumber: 1,
+          pageX: 100, // Default position
+          pageY: 100,
+          pageWidth: 200,
+          pageHeight: 60,
+          customText: '',
+          inserted: false,
+        },
+      });
+
+      await tx.documentAuditLog.create({
+        data: createDocumentAuditLogData({
+          type: DOCUMENT_AUDIT_LOG_TYPE.RECIPIENT_CREATED,
+          documentId: document.id,
+          metadata: requestMetadata,
+          data: {
+            recipientId: String(createdRecipient.id),
+            recipientName: user.name || '',
+            recipientEmail: user.email,
+            recipientRole: RecipientRole.SIGNER,
+          },
+        }),
+      });
+    }
 
     const createdDocument = await tx.document.findFirst({
       where: {

@@ -344,11 +344,12 @@ export const documentRouter = router({
     .input(ZCreateDocumentRequestSchema)
     .mutation(async ({ input, ctx }) => {
       const { user, teamId } = ctx;
-      const { title, documentDataId, timezone, folderId } = input;
+      const { title, documentDataId, timezone, folderId, selfSign } = input;
 
       ctx.logger.info({
         input: {
           folderId,
+          selfSign,
         },
       });
 
@@ -361,7 +362,7 @@ export const documentRouter = router({
         });
       }
 
-      return await createDocument({
+      const document = await createDocument({
         userId: user.id,
         teamId,
         title,
@@ -370,7 +371,10 @@ export const documentRouter = router({
         userTimezone: timezone,
         requestMetadata: ctx.metadata,
         folderId,
+        selfSign,
       });
+
+      return document;
     }),
 
   /**

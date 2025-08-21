@@ -226,7 +226,7 @@ export default function DocumentsPage() {
                   </h4>
                   <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     <Trans id="dataRetention.banner">
-                      Document content is automatically deleted in {retentionTime}. Document metadata, signatures, and audit logs are preserved.
+                      Document content with status completed is automatically deleted in {retentionTime}. Document metadata, signatures, and audit logs are preserved.
                     </Trans>
                   </p>
                 </div>

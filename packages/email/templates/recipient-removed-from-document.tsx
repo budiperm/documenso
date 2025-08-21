@@ -1,7 +1,8 @@
-import import { TemplateDocumentImage } from '../template-components/template-document-image';
-import { APP_NAME } from '@documenso/lib/constants/app'; msg } from '@lingui/core/macro';
+import { msg } from '@lingui/core/macro';
 import { useLingui } from '@lingui/react';
 import { Trans } from '@lingui/react/macro';
+
+import { APP_NAME } from '@documenso/lib/constants/app';
 
 import { Body, Container, Head, Hr, Html, Img, Preview, Section, Text } from '../components';
 import { useBranding } from '../providers/branding';

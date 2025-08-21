@@ -121,6 +121,60 @@ export const DocumentUploadDropzone = ({ className }: DocumentUploadDropzoneProp
     }
   };
 
+  const onSelfSignDrop = async (file: File) => {
+    try {
+      setIsLoading(true);
+
+      const response = await putPdfFile(file);
+
+      const { id } = await createDocument({
+        title: file.name,
+        documentDataId: response.id,
+        timezone: userTimezone,
+        folderId: folderId ?? undefined,
+        selfSign: true, // Flag to indicate this is self-signing
+      });
+
+      void refreshLimits();
+
+      // Navigate directly to signing page instead of edit page
+      await navigate(`${formatDocumentsPath(team.url)}/${id}/sign`);
+
+      toast({
+        title: _(msg`Document uploaded for self-signing`),
+        description: _(msg`Your document has been uploaded. You can now place your signature.`),
+        duration: 5000,
+      });
+
+      analytics.capture('App: Document Self-Sign Uploaded', {
+        userId: user.id,
+        documentId: id,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      const error = AppError.parseError(err);
+
+      console.error(err);
+
+      const errorMessage = match(error.code)
+        .with('INVALID_DOCUMENT_FILE', () => msg`You cannot upload encrypted PDFs`)
+        .with(
+          AppErrorCode.LIMIT_EXCEEDED,
+          () => msg`You have reached your document limit for this month. Please upgrade your plan.`,
+        )
+        .otherwise(() => msg`An error occurred while uploading your document.`);
+
+      toast({
+        title: _(msg`Error`),
+        description: _(errorMessage),
+        variant: 'destructive',
+        duration: 7500,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const onFileDropRejected = () => {
     toast({
       title: _(msg`Your document failed to upload.`),
@@ -141,7 +195,9 @@ export const DocumentUploadDropzone = ({ className }: DocumentUploadDropzoneProp
                 disabled={remaining.documents === 0 || !user.emailVerified}
                 disabledMessage={disabledMessage}
                 onDrop={onFileDrop}
+                onSelfSign={onSelfSignDrop}
                 onDropRejected={onFileDropRejected}
+                showSelfSignOption={true}
               />
             </div>
           </TooltipTrigger>
